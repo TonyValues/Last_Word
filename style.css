@@ -1,0 +1,47 @@
+*{box-sizing:border-box}
+:root{
+  --bg:#f5f6f8;--card:#fff;--text:#17191d;--muted:#6d737d;
+  --line:#e4e7eb;--primary:#111827;--success:#16834b;--danger:#c53939;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,"Noto Sans Hebrew",sans-serif}
+button,input{font:inherit}
+.app{width:min(720px,calc(100% - 28px));margin:0 auto;padding:28px 0 36px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+h1{font-size:30px;margin:0}h2{font-size:25px;margin:8px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 30px #1118270a}
+.intro-card{text-align:center;padding:48px 28px}
+.hero-icon{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:#eef0f3;font-size:34px;font-weight:800;margin:0 auto 20px}
+.intro-card p{max-width:520px;margin:0 auto 28px;color:var(--muted);line-height:1.65;font-size:16px}
+.primary,.secondary{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;transition:.15s}
+.primary{background:var(--primary);color:#fff}.primary:hover{transform:translateY(-1px);opacity:.92}
+.secondary{background:#fff;border:1px solid var(--line);color:var(--text)}
+.game-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;font-weight:700;margin:0 4px 10px}
+.words-card{padding:14px}.words{display:grid;gap:9px}
+.word{min-height:56px;border:1px solid var(--line);border-radius:13px;display:flex;align-items:center;padding:0 18px;font-size:19px;font-weight:700;background:#fafbfc}
+.word.hidden-word{color:#b7bcc4;background:#f4f5f7;justify-content:center;font-size:25px;letter-spacing:4px}
+.word.target{border-color:#cfd3d9}
+.guess-card{margin-top:14px;padding:22px}
+.guess-card label{display:block;font-weight:800;margin-bottom:10px}
+.guess-row{display:flex;gap:9px}
+.guess-row input{flex:1;min-width:0;border:1px solid #cfd3d9;border-radius:12px;padding:12px 14px;outline:none}
+.guess-row input:focus{border-color:#6b7280;box-shadow:0 0 0 3px #11182712}
+.feedback{min-height:24px;padding-top:10px;font-size:14px;font-weight:700}
+.feedback.bad{color:var(--danger)}.feedback.good{color:var(--success)}
+.stats{display:flex;justify-content:center;gap:14px;margin-top:14px}
+.stats div{background:#fff;border:1px solid var(--line);border-radius:14px;min-width:130px;padding:12px;text-align:center}
+.stats strong{display:block;font-size:22px}.stats span{font-size:12px;color:var(--muted)}
+.result{text-align:center;padding:40px 28px}
+.result-icon{width:64px;height:64px;border-radius:50%;background:#eaf7f0;color:var(--success);display:grid;place-items:center;font-size:30px;font-weight:800;margin:0 auto 18px}
+.result-icon.fail{background:#fff0f0;color:var(--danger)}
+.result p{color:var(--muted);line-height:1.6}
+.answer-box{background:#f4f5f7;border-radius:14px;padding:14px;margin:22px 0}
+.answer-box span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.answer-box strong{font-size:24px}
+footer{text-align:center;color:#9aa0a9;font-size:12px;margin-top:24px}
+.hidden{display:none!important}
+code{font-family:monospace}
+@media(max-width:520px){
+  .app{padding-top:18px}.topbar{align-items:flex-start}h1{font-size:26px}
+  .intro-card{padding:36px 20px}.guess-row{flex-direction:column}.guess-row button{width:100%}
+  .game-meta{font-size:12px}.stats div{min-width:0;flex:1}
+}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>המילה האחרונה</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">משחק ניחושים</div>
+        <h1>המילה האחרונה</h1>
+      </div>
+      <button id="newGameBtn" class="secondary">משחק חדש</button>
+    </header>
+
+    <section class="card intro-card" id="intro">
+      <div class="hero-icon">?</div>
+      <h2>כמה מעט מילים תצטרך?</h2>
+      <p>המילה הראשונה חשופה. בכל ניחוש שגוי תיחשף מילה נוספת. המטרה: לנחש את המילה האחרונה בכמה שפחות חשיפות.</p>
+      <button id="startBtn" class="primary">התחל משחק</button>
+    </section>
+
+    <section id="game" class="game hidden">
+      <div class="game-meta">
+        <span id="gameNumber">משחק #001</span>
+        <span id="revealedCount">1 / 6 מילים נחשפו</span>
+      </div>
+
+      <section class="card words-card">
+        <div id="words" class="words"></div>
+      </section>
+
+      <section class="card guess-card">
+        <label for="guess">מה המילה האחרונה?</label>
+        <div class="guess-row">
+          <input id="guess" autocomplete="off" placeholder="הקלד את הניחוש שלך">
+          <button id="guessBtn" class="primary">נחש</button>
+        </div>
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+      </section>
+
+      <div class="stats">
+        <div><strong id="mistakes">0</strong><span>טעויות</span></div>
+        <div><strong id="score">100</strong><span>ניקוד</span></div>
+      </div>
+    </section>
+
+    <section id="result" class="card result hidden">
+      <div id="resultIcon" class="result-icon">✓</div>
+      <div class="eyebrow" id="resultLabel">כל הכבוד!</div>
+      <h2 id="resultTitle">מצאת את המילה</h2>
+      <p id="resultText"></p>
+      <div class="answer-box">
+        <span>התשובה</span>
+        <strong id="answer"></strong>
+      </div>
+      <button id="againBtn" class="primary">לשחק שוב</button>
+    </section>
+
+    <footer>גרסה ראשונה · ניתן להוסיף משחקים דרך <code>games.js</code></footer>
+  </main>
+  <script src="games.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
