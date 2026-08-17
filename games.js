@@ -56,7 +56,13 @@ const GAMES = [
   {
     id: 10,
     date: "2026-08-17",
-    words: ["אדום", "צהוב", "ירוק", "צומת", "מכונית"],
-    answers: ["רמזור", "רמזור תנועה"]
+    words: ["סנקט פטרסבורג", "פטרוגרד", "לנינגרד"],
+    answers: ["סנקט פטרסבורג", "סנט פטרסבורג "]
+  }
+  {
+    id: 11,
+    date: "2026-08-18",
+    words: ["2 ", "3", "the amazing","the amazing 2", "homecoming", "far from home","no way home"],
+    answers: ["brand new day "]
   }
 ];
