@@ -2,26 +2,45 @@
 <html lang="he" dir="rtl">
 
 <head>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
   <title>המילה האחרונה</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link
+    rel="stylesheet"
+    href="style.css?v=3"
+  >
+
 </head>
+
 
 <body>
 
 <main class="app">
+
 
   <!-- HEADER -->
 
   <header class="topbar">
 
     <div>
-      <div class="eyebrow">משחק ניחושים</div>
-      <h1>המילה האחרונה</h1>
+
+      <div class="eyebrow">
+        משחק ניחושים
+      </div>
+
+      <h1>
+        המילה האחרונה
+      </h1>
+
     </div>
+
 
     <button
       id="newGameBtn"
@@ -33,7 +52,7 @@
   </header>
 
 
-  <!-- GAME SELECTOR -->
+  <!-- PREVIOUS GAMES -->
 
   <section
     id="gameSelector"
@@ -41,12 +60,17 @@
   >
 
     <div class="eyebrow">
-      ארכיון המשחקים
+      ארכיון
     </div>
 
-    <h2>בחר משחק</h2>
+    <h2>
+      משחקים קודמים
+    </h2>
 
-    <div id="gameList" class="game-list"></div>
+    <div
+      id="gameList"
+      class="game-list"
+    ></div>
 
   </section>
 
@@ -54,11 +78,13 @@
   <!-- INTRO -->
 
   <section
-    class="card intro-card"
     id="intro"
+    class="card intro-card"
   >
 
-    <div class="hero-icon">?</div>
+    <div class="hero-icon">
+      ?
+    </div>
 
     <h2 id="introTitle">
       כמה מעט מילים תצטרך?
@@ -95,7 +121,6 @@
       </span>
 
       <span id="gameDate">
-        17/08/2026
       </span>
 
       <span id="revealedCount">
@@ -104,8 +129,6 @@
 
     </div>
 
-
-    <!-- WORDS -->
 
     <section class="card words-card">
 
@@ -117,13 +140,12 @@
     </section>
 
 
-    <!-- GUESS -->
-
     <section class="card guess-card">
 
       <label for="guess">
         מה המילה האחרונה?
       </label>
+
 
       <div class="guess-row">
 
@@ -132,6 +154,7 @@
           autocomplete="off"
           placeholder="הקלד את הניחוש שלך"
         >
+
 
         <button
           id="guessBtn"
@@ -142,6 +165,7 @@
 
       </div>
 
+
       <div
         id="feedback"
         class="feedback"
@@ -151,18 +175,31 @@
     </section>
 
 
-    <!-- LIVE STATS -->
-
     <div class="stats">
 
       <div>
-        <strong id="mistakes">0</strong>
-        <span>טעויות</span>
+
+        <strong id="mistakes">
+          0
+        </strong>
+
+        <span>
+          טעויות
+        </span>
+
       </div>
 
+
       <div>
-        <strong id="score">100</strong>
-        <span>ניקוד</span>
+
+        <strong id="score">
+          100
+        </strong>
+
+        <span>
+          ניקוד
+        </span>
+
       </div>
 
     </div>
@@ -184,6 +221,7 @@
       ✓
     </div>
 
+
     <div
       class="eyebrow"
       id="resultLabel"
@@ -191,57 +229,24 @@
       כל הכבוד!
     </div>
 
+
     <h2 id="resultTitle">
       מצאת את המילה
     </h2>
+
 
     <p id="resultText"></p>
 
 
     <div class="answer-box">
 
-      <span>התשובה</span>
+      <span>
+        התשובה
+      </span>
 
       <strong id="answer"></strong>
 
     </div>
-
-
-    <!-- SHARED STATISTICS -->
-
-    <section
-      id="statsSection"
-      class="result-stats hidden"
-    >
-
-      <h3>סטטיסטיקות המשחק</h3>
-
-      <div class="global-stats">
-
-        <div>
-          <strong id="playersCount">—</strong>
-          <span>שחקנים</span>
-        </div>
-
-        <div>
-          <strong id="successRate">—</strong>
-          <span>הצליחו</span>
-        </div>
-
-      </div>
-
-
-      <div class="common-mistakes">
-
-        <h4>3 הטעויות הנפוצות</h4>
-
-        <ol id="commonMistakes">
-          <li>טוען נתונים...</li>
-        </ol>
-
-      </div>
-
-    </section>
 
 
     <button
@@ -255,14 +260,19 @@
 
 
   <footer>
-    משחק יומי · משחקים קודמים · סטטיסטיקות
+    משחק יומי · משחקים קודמים
   </footer>
+
 
 </main>
 
 
-<script src="games.js"></script>
-<script src="app.js"></script>
+<!-- IMPORTANT:
+     games.js must load BEFORE app.js
+-->
+
+<script src="games.js?v=3"></script>
+<script src="app.js?v=3"></script>
 
 </body>
 
