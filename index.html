@@ -1,68 +1,269 @@
 <!doctype html>
 <html lang="he" dir="rtl">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+
   <title>המילה האחרונה</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main class="app">
-    <header class="topbar">
+
+<main class="app">
+
+  <!-- HEADER -->
+
+  <header class="topbar">
+
+    <div>
+      <div class="eyebrow">משחק ניחושים</div>
+      <h1>המילה האחרונה</h1>
+    </div>
+
+    <button
+      id="newGameBtn"
+      class="secondary"
+    >
+      משחקים קודמים
+    </button>
+
+  </header>
+
+
+  <!-- GAME SELECTOR -->
+
+  <section
+    id="gameSelector"
+    class="card game-selector hidden"
+  >
+
+    <div class="eyebrow">
+      ארכיון המשחקים
+    </div>
+
+    <h2>בחר משחק</h2>
+
+    <div id="gameList" class="game-list"></div>
+
+  </section>
+
+
+  <!-- INTRO -->
+
+  <section
+    class="card intro-card"
+    id="intro"
+  >
+
+    <div class="hero-icon">?</div>
+
+    <h2 id="introTitle">
+      כמה מעט מילים תצטרך?
+    </h2>
+
+    <p id="introText">
+      המילה הראשונה חשופה.
+      בכל ניחוש שגוי תיחשף מילה נוספת.
+      המטרה: לנחש את המילה האחרונה
+      בכמה שפחות חשיפות.
+    </p>
+
+    <button
+      id="startBtn"
+      class="primary"
+    >
+      התחל משחק
+    </button>
+
+  </section>
+
+
+  <!-- GAME -->
+
+  <section
+    id="game"
+    class="game hidden"
+  >
+
+    <div class="game-meta">
+
+      <span id="gameNumber">
+        משחק #001
+      </span>
+
+      <span id="gameDate">
+        17/08/2026
+      </span>
+
+      <span id="revealedCount">
+        1 / 5 מילים נחשפו
+      </span>
+
+    </div>
+
+
+    <!-- WORDS -->
+
+    <section class="card words-card">
+
+      <div
+        id="words"
+        class="words"
+      ></div>
+
+    </section>
+
+
+    <!-- GUESS -->
+
+    <section class="card guess-card">
+
+      <label for="guess">
+        מה המילה האחרונה?
+      </label>
+
+      <div class="guess-row">
+
+        <input
+          id="guess"
+          autocomplete="off"
+          placeholder="הקלד את הניחוש שלך"
+        >
+
+        <button
+          id="guessBtn"
+          class="primary"
+        >
+          נחש
+        </button>
+
+      </div>
+
+      <div
+        id="feedback"
+        class="feedback"
+        aria-live="polite"
+      ></div>
+
+    </section>
+
+
+    <!-- LIVE STATS -->
+
+    <div class="stats">
+
       <div>
-        <div class="eyebrow">משחק ניחושים</div>
-        <h1>המילה האחרונה</h1>
-      </div>
-      <button id="newGameBtn" class="secondary">משחק חדש</button>
-    </header>
-
-    <section class="card intro-card" id="intro">
-      <div class="hero-icon">?</div>
-      <h2>כמה מעט מילים תצטרך?</h2>
-      <p>המילה הראשונה חשופה. בכל ניחוש שגוי תיחשף מילה נוספת. המטרה: לנחש את המילה האחרונה בכמה שפחות חשיפות.</p>
-      <button id="startBtn" class="primary">התחל משחק</button>
-    </section>
-
-    <section id="game" class="game hidden">
-      <div class="game-meta">
-        <span id="gameNumber">משחק #001</span>
-        <span id="revealedCount">1 / 6 מילים נחשפו</span>
+        <strong id="mistakes">0</strong>
+        <span>טעויות</span>
       </div>
 
-      <section class="card words-card">
-        <div id="words" class="words"></div>
-      </section>
+      <div>
+        <strong id="score">100</strong>
+        <span>ניקוד</span>
+      </div>
 
-      <section class="card guess-card">
-        <label for="guess">מה המילה האחרונה?</label>
-        <div class="guess-row">
-          <input id="guess" autocomplete="off" placeholder="הקלד את הניחוש שלך">
-          <button id="guessBtn" class="primary">נחש</button>
+    </div>
+
+  </section>
+
+
+  <!-- RESULT -->
+
+  <section
+    id="result"
+    class="card result hidden"
+  >
+
+    <div
+      id="resultIcon"
+      class="result-icon"
+    >
+      ✓
+    </div>
+
+    <div
+      class="eyebrow"
+      id="resultLabel"
+    >
+      כל הכבוד!
+    </div>
+
+    <h2 id="resultTitle">
+      מצאת את המילה
+    </h2>
+
+    <p id="resultText"></p>
+
+
+    <div class="answer-box">
+
+      <span>התשובה</span>
+
+      <strong id="answer"></strong>
+
+    </div>
+
+
+    <!-- SHARED STATISTICS -->
+
+    <section
+      id="statsSection"
+      class="result-stats hidden"
+    >
+
+      <h3>סטטיסטיקות המשחק</h3>
+
+      <div class="global-stats">
+
+        <div>
+          <strong id="playersCount">—</strong>
+          <span>שחקנים</span>
         </div>
-        <div id="feedback" class="feedback" aria-live="polite"></div>
-      </section>
 
-      <div class="stats">
-        <div><strong id="mistakes">0</strong><span>טעויות</span></div>
-        <div><strong id="score">100</strong><span>ניקוד</span></div>
+        <div>
+          <strong id="successRate">—</strong>
+          <span>הצליחו</span>
+        </div>
+
       </div>
+
+
+      <div class="common-mistakes">
+
+        <h4>3 הטעויות הנפוצות</h4>
+
+        <ol id="commonMistakes">
+          <li>טוען נתונים...</li>
+        </ol>
+
+      </div>
+
     </section>
 
-    <section id="result" class="card result hidden">
-      <div id="resultIcon" class="result-icon">✓</div>
-      <div class="eyebrow" id="resultLabel">כל הכבוד!</div>
-      <h2 id="resultTitle">מצאת את המילה</h2>
-      <p id="resultText"></p>
-      <div class="answer-box">
-        <span>התשובה</span>
-        <strong id="answer"></strong>
-      </div>
-      <button id="againBtn" class="primary">לשחק שוב</button>
-    </section>
 
-    <footer>גרסה ראשונה · ניתן להוסיף משחקים דרך <code>games.js</code></footer>
-  </main>
-  <script src="games.js"></script>
-  <script src="app.js"></script>
+    <button
+      id="againBtn"
+      class="primary"
+    >
+      לשחק שוב
+    </button>
+
+  </section>
+
+
+  <footer>
+    משחק יומי · משחקים קודמים · סטטיסטיקות
+  </footer>
+
+</main>
+
+
+<script src="games.js"></script>
+<script src="app.js"></script>
+
 </body>
+
 </html>
