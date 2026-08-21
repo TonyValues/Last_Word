@@ -647,7 +647,7 @@ function finish(won, quit = false) {
       window.setTimeout(() => {
         result.scrollIntoView({
           behavior: "smooth",
-          block: "start"
+          block: "center"
         });
       }, 0);
     }
