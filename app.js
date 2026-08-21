@@ -471,8 +471,13 @@ function renderWords() {
 
   if (revealedCount) {
 
+    const totalItems = currentGame.words.length + 1;
+    const revealedItems = finished
+      ? totalItems
+      : revealed;
+
     revealedCount.textContent =
-      `${revealed} / ${currentGame.words.length} מילים נחשפו`;
+      `${revealedItems} / ${totalItems} מילים נחשפו`;
   }
 }
 
@@ -614,6 +619,12 @@ function finish(won, quit = false) {
 
   finished = true;
 
+  if (won && currentGame) {
+    revealed = currentGame.words.length;
+    renderWords();
+    updateStats();
+  }
+
   if (quit && currentGame) {
     revealed = currentGame.words.length;
     renderWords();
@@ -703,7 +714,7 @@ function finish(won, quit = false) {
         ? `הצלחת עם ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}.`
         : isLatestPublishedGame(currentGame)
           ? "התשובה תישמר בסוד עד לפרסום המשחק הבא."
-          : "אפשר לראות את התשובה למשחק הזה למטה.";
+          : "התשובה למשחק הזה היא";
   }
 }
 
@@ -973,6 +984,17 @@ function initialize() {
 
   if (quitBtn) {
     quitBtn.addEventListener("click", () => finish(false, true));
+  }
+
+  const suggestionForm = $("suggestionForm");
+  const suggestionNotice = $("suggestionNotice");
+
+  if (suggestionForm && suggestionNotice) {
+    suggestionForm.addEventListener("submit", () => {
+      suggestionNotice.textContent = "ההצעה נשלחה, תודה!";
+      suggestionNotice.classList.add("visible");
+      window.setTimeout(() => suggestionNotice.classList.remove("visible"), 5000);
+    });
   }
 
   if (guess) {

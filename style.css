@@ -34,8 +34,8 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 .game-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start;gap:14px}
 .game-layout #game{min-width:0}
 .game-layout .result{position:sticky;top:18px}
-.words-card{padding:10px}.words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.word{min-height:46px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;padding:8px 12px;font-size:17px;font-weight:700;background:#fafbfc}
+.words-card{padding:10px}.words{display:grid;grid-template-columns:1fr;gap:7px}
+.word{min-height:46px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px;font-size:17px;font-weight:700;background:#fafbfc}
 .word.hidden-word{color:#b7bcc4;background:#f4f5f7;justify-content:center;font-size:25px;letter-spacing:4px}
 .word.target{border-color:#cfd3d9}
 .guess-card{margin-top:10px;padding:14px}
@@ -61,6 +61,8 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 footer{text-align:center;color:#9aa0a9;font-size:12px;margin-top:24px}
 .suggestion{margin-top:12px;padding:13px 15px}.suggestion .eyebrow{margin-bottom:2px;font-size:10px}.suggestion h2{display:inline;margin:0 8px 0 0;font-size:17px}.suggestion p{display:inline;color:var(--muted);margin:0;font-size:12px}.suggestion-form{display:grid;grid-template-columns:1.4fr 1fr 1.4fr 1fr auto;align-items:end;gap:7px;margin-top:10px}.suggestion-form label{display:grid;gap:3px;min-width:0}.suggestion-form label span{font-size:11px;font-weight:700;color:var(--muted)}.suggestion-form input{min-width:0;border:1px solid #cfd3d9;border-radius:8px;padding:7px 9px;font-size:13px;background:#fff}.suggestion-form input:focus{border-color:var(--primary);box-shadow:0 0 0 3px #0d59601c}.suggestion-form button{justify-self:stretch;padding:7px 12px;font-size:13px}
 .hidden{display:none!important}
+.suggestion-response{display:none}
+.suggestion-notice{height:0;overflow:hidden;color:var(--success);font-size:13px;font-weight:700;opacity:0;transition:opacity .2s,height .2s}.suggestion-notice.visible{height:20px;margin-top:8px;opacity:1}
 code{font-family:monospace}
 @media(max-width:520px){
   .app{padding-top:14px}.topbar{align-items:flex-start}h1{font-size:28px}

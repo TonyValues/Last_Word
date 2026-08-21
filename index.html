@@ -14,7 +14,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=9"
+    href="style.css?v=11"
   >
 
 </head>
@@ -277,7 +277,7 @@
     <h2>הצע משחק חדש</h2>
     <p>שלחו לנו רמזים, תשובה והסבר קצר.</p>
 
-    <form id="suggestionForm" class="suggestion-form" action="https://formsubmit.co/yuvalst3@gmail.com" method="POST">
+    <form id="suggestionForm" class="suggestion-form" action="https://formsubmit.co/yuvalst3@gmail.com" method="POST" target="suggestionResponse">
       <input type="hidden" name="_subject" value="הצעת משחק חדש - המילה האחרונה">
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_template" value="table">
@@ -299,13 +299,15 @@
       </label>
       <button class="primary" type="submit">שלח הצעה</button>
     </form>
+    <iframe name="suggestionResponse" class="suggestion-response" title="תוצאת שליחת ההצעה"></iframe>
+    <div id="suggestionNotice" class="suggestion-notice" role="status" aria-live="polite"></div>
   </section>
 
 
 </main>
 
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=10"></script>
 
 </body>
 
