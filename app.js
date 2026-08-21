@@ -4,7 +4,7 @@ let revealed = 1;
 let guesses = 0;
 let finished = false;
 const STATS_KEY = "the-last-word-stats";
-const SUGGESTION_EMAIL = "replace-with-your-email@example.com";
+const SUGGESTION_EMAIL = "yuvalst3@gmail.com";
 
 
 /* =========================================
