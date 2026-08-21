@@ -416,8 +416,13 @@ function startGame(selectedGame) {
   updateStats();
 
 
-  if (guess) {
-    guess.focus();
+  if (game) {
+    window.setTimeout(() => {
+      game.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 0);
   }
 }
 
@@ -593,6 +598,15 @@ function submitGuess() {
     renderWords();
     updateStats();
 
+    if (window.innerWidth <= 760 && feedback) {
+      window.setTimeout(() => {
+        feedback.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 0);
+    }
+
     guessEl.select();
 
   } else {
@@ -606,6 +620,16 @@ function submitGuess() {
     }
 
     updateStats();
+
+    if (window.innerWidth <= 760 && feedback) {
+      window.setTimeout(() => {
+        feedback.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 0);
+    }
+
     guessEl.select();
   }
 }
