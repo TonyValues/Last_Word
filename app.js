@@ -1,7 +1,9 @@
 let currentGame = null;
+let GAMES = [];
 let revealed = 1;
-let mistakes = 0;
+let guesses = 0;
 let finished = false;
+const STATS_KEY = "the-last-word-stats";
 
 
 /* =========================================
@@ -19,6 +21,112 @@ function normalize(text) {
     .toLowerCase()
     .replace(/[״"']/g, "")
     .replace(/\s+/g, " ");
+}
+
+
+function parseCsvLine(line) {
+  const fields = [];
+  let field = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        field += '"';
+        index++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      fields.push(field.trim());
+      field = "";
+    } else {
+      field += character;
+    }
+  }
+
+  fields.push(field.trim());
+  return fields;
+}
+
+
+function parseGamesCsv(csvText) {
+  const lines = csvText.trim().split(/\r?\n/);
+  const headers = parseCsvLine(lines.shift());
+
+  return lines
+    .filter(line => line.trim())
+    .map(line => {
+      const values = parseCsvLine(line);
+      const game = Object.fromEntries(
+        headers.map((header, index) => [header, values[index] || ""])
+      );
+
+      return {
+        id: Number(game.id),
+        date: game.date,
+        words: game.words.split("|").map(word => word.trim()).filter(Boolean),
+        answers: game.answers.split("|").map(answer => answer.trim()).filter(Boolean),
+        explanation: game.explanation
+      };
+    });
+}
+
+
+async function loadGames() {
+  const response = await fetch("games.csv?v=1");
+
+  if (!response.ok) {
+    throw new Error(`Unable to load games.csv (${response.status})`);
+  }
+
+  GAMES = parseGamesCsv(await response.text());
+}
+
+
+function getStats() {
+  const emptyStats = { played: 0, won: 0 };
+
+  try {
+    const savedStats = JSON.parse(localStorage.getItem(STATS_KEY));
+
+    return savedStats
+      ? { ...emptyStats, ...savedStats }
+      : emptyStats;
+  } catch (error) {
+    return emptyStats;
+  }
+}
+
+
+function saveStats(won) {
+  const stats = getStats();
+
+  stats.played++;
+
+  if (won) {
+    stats.won++;
+  }
+
+  try {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  } catch (error) {
+    // Private browsing can disable local storage; the game still works.
+  }
+
+  renderStats();
+}
+
+
+function renderStats() {
+  const stats = getStats();
+  const playedEl = $("gamesPlayed");
+  const wonEl = $("gamesWon");
+
+  if (playedEl) playedEl.textContent = stats.played;
+  if (wonEl) wonEl.textContent = stats.won;
 }
 
 
@@ -187,6 +295,13 @@ function getAvailableGames() {
 }
 
 
+function isLatestPublishedGame(game) {
+  const publishedGames = getAvailableGames();
+
+  return publishedGames.length > 0 && publishedGames[0].id === game.id;
+}
+
+
 /* =========================================
    START GAME
 ========================================= */
@@ -201,7 +316,7 @@ function startGame(selectedGame) {
   currentGame = selectedGame;
 
   revealed = 1;
-  mistakes = 0;
+  guesses = 0;
   finished = false;
 
 
@@ -225,6 +340,15 @@ function startGame(selectedGame) {
 
   if (game) {
     game.classList.remove("hidden");
+  }
+
+  const quitBtn = $("quitBtn");
+
+  if (quitBtn) {
+    quitBtn.classList.toggle(
+      "hidden",
+      isLatestPublishedGame(currentGame)
+    );
   }
 
 
@@ -332,22 +456,10 @@ function renderWords() {
 
 function updateStats() {
 
-  const mistakesEl = $("mistakes");
-  const scoreEl = $("score");
+  const guessesEl = $("guesses");
 
-
-  if (mistakesEl) {
-    mistakesEl.textContent = mistakes;
-  }
-
-
-  if (scoreEl) {
-
-    scoreEl.textContent =
-      Math.max(
-        0,
-        100 - mistakes * 15
-      );
+  if (guessesEl) {
+    guessesEl.textContent = guesses;
   }
 }
 
@@ -405,12 +517,18 @@ function submitGuess() {
   const guess =
     guessEl.value.trim();
 
+  guesses++;
+
 
   /* -----------------------------------------
      CORRECT
   ----------------------------------------- */
 
   if (isCorrectAnswer(guess)) {
+
+    revealed = currentGame.words.length;
+    renderWords();
+    updateStats();
 
     finish(true);
 
@@ -422,13 +540,7 @@ function submitGuess() {
      WRONG
   ----------------------------------------- */
 
-  mistakes++;
-
-
-  if (
-    revealed <
-    currentGame.words.length
-  ) {
+  if (revealed < currentGame.words.length) {
 
     revealed++;
 
@@ -452,8 +564,17 @@ function submitGuess() {
     guessEl.select();
 
   } else {
+    const feedback = $("feedback");
 
-    finish(false);
+    if (feedback) {
+      feedback.textContent = isLatestPublishedGame(currentGame)
+        ? "כל הרמזים נחשפו — אפשר להמשיך לנחש."
+        : "כל הרמזים נחשפו — אפשר להמשיך לנחש או לוותר.";
+      feedback.className = "feedback bad";
+    }
+
+    updateStats();
+    guessEl.select();
   }
 }
 
@@ -462,7 +583,7 @@ function submitGuess() {
    FINISH
 ========================================= */
 
-function finish(won) {
+function finish(won, quit = false) {
 
   finished = true;
 
@@ -471,7 +592,7 @@ function finish(won) {
   const result = $("result");
 
 
-  if (game) {
+  if (game && !won) {
     game.classList.add("hidden");
   }
 
@@ -480,17 +601,23 @@ function finish(won) {
   }
 
 
-  const answers =
-    getAnswers(currentGame);
-
-
   const answerEl =
     $("answer");
 
   if (answerEl) {
+    const shouldRevealAnswer = won || (quit && !isLatestPublishedGame(currentGame));
+    answerEl.textContent = shouldRevealAnswer
+      ? getAnswers(currentGame)[0] || ""
+      : "התשובה תיחשף במשחק הבא";
 
-    answerEl.textContent =
-      answers.join(" / ");
+    const explanationEl = $("answerExplanation");
+
+    if (explanationEl) {
+      explanationEl.textContent = shouldRevealAnswer
+        ? currentGame.explanation || ""
+        : "";
+      explanationEl.classList.toggle("hidden", !shouldRevealAnswer || !currentGame.explanation);
+    }
   }
 
 
@@ -526,15 +653,11 @@ function finish(won) {
     resultTitle.textContent =
       won
         ? "מצאת את המילה האחרונה"
-        : "נגמרו הרמזים";
+        : "המשחק הסתיים";
   }
 
 
-  const score =
-    Math.max(
-      0,
-      100 - mistakes * 15
-    );
+  saveStats(won);
 
 
   const resultText =
@@ -544,12 +667,29 @@ function finish(won) {
 
     resultText.textContent =
       won
-        ? `הצלחת עם ${mistakes} ${
-            mistakes === 1
-              ? "טעות"
-              : "טעויות"
-          } וקיבלת ${score} נקודות.`
-        : "כל המילים נחשפו, ועכשיו אפשר לראות את התשובה.";
+        ? `הצלחת עם ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}.`
+        : isLatestPublishedGame(currentGame)
+          ? "התשובה תישמר בסוד עד לפרסום המשחק הבא."
+          : "אפשר לראות את התשובה למשחק הזה למטה.";
+  }
+}
+
+
+function shareResult() {
+  if (!currentGame) return;
+
+  const shareText = `המילה האחרונה #${String(currentGame.id).padStart(3, "0")} | ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`;
+  const shareButton = $("shareBtn");
+
+  if (navigator.share) {
+    navigator.share({ title: "המילה האחרונה", text: shareText }).catch(() => {});
+    return;
+  }
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      if (shareButton) shareButton.textContent = "התוצאה הועתקה";
+    }).catch(() => {});
   }
 }
 
@@ -720,6 +860,7 @@ function initialize() {
 
 
   renderGameList();
+  renderStats();
 
 
   /* -----------------------------------------
@@ -789,6 +930,18 @@ function initialize() {
   const guess =
     $("guess");
 
+  const shareBtn = $("shareBtn");
+
+  if (shareBtn) {
+    shareBtn.addEventListener("click", shareResult);
+  }
+
+  const quitBtn = $("quitBtn");
+
+  if (quitBtn) {
+    quitBtn.addEventListener("click", () => finish(false, true));
+  }
+
   if (guess) {
 
     guess.addEventListener(
@@ -847,14 +1000,25 @@ function initialize() {
    RUN
 ========================================= */
 
+async function startApplication() {
+  try {
+    await loadGames();
+    initialize();
+  } catch (error) {
+    console.error(error);
+    showNoGames();
+  }
+}
+
+
 if (document.readyState === "loading") {
 
   document.addEventListener(
     "DOMContentLoaded",
-    initialize
+    startApplication
   );
 
 } else {
 
-  initialize();
+  startApplication();
 }

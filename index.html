@@ -45,6 +45,7 @@
     <button
       id="newGameBtn"
       class="secondary"
+      type="button"
     >
       משחקים קודמים
     </button>
@@ -87,22 +88,33 @@
     </div>
 
     <h2 id="introTitle">
-      כמה מעט מילים תצטרך?
+      כמה מילים תצטרך?
     </h2>
 
     <p id="introText">
-      המילה הראשונה חשופה.
-      בכל ניחוש שגוי תיחשף מילה נוספת.
-      המטרה: לנחש את המילה האחרונה
-      בכמה שפחות חשיפות.
+     המטרה: לנחש את המילה האחרונה
+     בכמה שפחות ניחושים.
+      בכל ניחוש שגוי תיחשף מילה נוספת
     </p>
 
     <button
       id="startBtn"
       class="primary"
+      type="button"
     >
       התחל משחק
     </button>
+
+    <div class="player-summary" aria-label="הסטטיסטיקה שלך">
+      <div>
+        <strong id="gamesPlayed">0</strong>
+        <span>משחקים</span>
+      </div>
+      <div>
+        <strong id="gamesWon">0</strong>
+        <span>ניצחונות</span>
+      </div>
+    </div>
 
   </section>
 
@@ -172,36 +184,22 @@
         aria-live="polite"
       ></div>
 
+      <button
+        id="quitBtn"
+        class="secondary quit-button"
+        type="button"
+      >
+        וותר על המשחק
+      </button>
+
     </section>
 
 
     <div class="stats">
-
       <div>
-
-        <strong id="mistakes">
-          0
-        </strong>
-
-        <span>
-          טעויות
-        </span>
-
+        <strong id="guesses">0</strong>
+        <span>ניחושים</span>
       </div>
-
-
-      <div>
-
-        <strong id="score">
-          100
-        </strong>
-
-        <span>
-          ניקוד
-        </span>
-
-      </div>
-
     </div>
 
   </section>
@@ -246,14 +244,28 @@
 
       <strong id="answer"></strong>
 
+      <p
+        id="answerExplanation"
+        class="answer-explanation"
+      ></p>
+
     </div>
 
 
     <button
       id="againBtn"
       class="primary"
+        type="button"
     >
       לשחק שוב
+    </button>
+
+    <button
+      id="shareBtn"
+      class="secondary share-button"
+      type="button"
+    >
+      שתף תוצאה
     </button>
 
   </section>
@@ -267,12 +279,7 @@
 </main>
 
 
-<!-- IMPORTANT:
-     games.js must load BEFORE app.js
--->
-
-<script src="games.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 
 </body>
 
