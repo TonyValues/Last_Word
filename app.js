@@ -4,7 +4,6 @@ let revealed = 1;
 let guesses = 0;
 let finished = false;
 const STATS_KEY = "the-last-word-stats";
-const SUGGESTION_EMAIL = "yuvalst3@gmail.com";
 
 
 /* =========================================
@@ -728,25 +727,6 @@ function shareResult() {
 }
 
 
-function submitSuggestion(event) {
-  event.preventDefault();
-
-  const words = $("suggestionWords").value.trim();
-  const answer = $("suggestionAnswer").value.trim();
-  const explanation = $("suggestionExplanation").value.trim();
-  const author = $("suggestionAuthor").value.trim() || "לא צוין";
-  const subject = "הצעת משחק חדש - המילה האחרונה";
-  const body = [
-    `רמזים: ${words}`,
-    `תשובה: ${answer}`,
-    `הסבר: ${explanation || "לא צוין"}`,
-    `מציע/ה: ${author}`
-  ].join("\n");
-
-  window.location.href = `mailto:${SUGGESTION_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
-
 /* =========================================
    GAME LIST
 ========================================= */
@@ -993,12 +973,6 @@ function initialize() {
 
   if (quitBtn) {
     quitBtn.addEventListener("click", () => finish(false, true));
-  }
-
-  const suggestionForm = $("suggestionForm");
-
-  if (suggestionForm) {
-    suggestionForm.addEventListener("submit", submitSuggestion);
   }
 
   if (guess) {
