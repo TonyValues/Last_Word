@@ -14,7 +14,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=4"
+    href="style.css?v=6"
   >
 
 </head>
@@ -142,6 +142,11 @@
       </span>
 
     </div>
+
+    <div
+      id="gameAuthor"
+      class="game-author"
+    ></div>
 
 
     <section class="card words-card">
@@ -279,11 +284,25 @@
     משחק יומי · משחקים קודמים
   </footer>
 
+  <section class="suggestion card">
+    <div class="eyebrow">יש לך רעיון?</div>
+    <h2>הצע משחק חדש</h2>
+    <p>שלחו לנו רמזים, תשובה והסבר קצר. הטופס יפתח הודעת אימייל מוכנה לשליחה.</p>
+
+    <form id="suggestionForm" class="suggestion-form">
+      <input id="suggestionWords" required placeholder="רמזים, מופרדים בפסיקים">
+      <input id="suggestionAnswer" required placeholder="תשובה">
+      <input id="suggestionExplanation" placeholder="הסבר קצר (לא חובה)">
+      <input id="suggestionAuthor" placeholder="השם שלך (לא חובה)">
+      <button class="primary" type="submit">שלח הצעה</button>
+    </form>
+  </section>
+
 
 </main>
 
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 
 </body>
 

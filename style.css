@@ -24,6 +24,7 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 .game-list-item{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid var(--line);border-radius:10px;background:#fbfcfc;color:var(--text);padding:11px 14px;text-align:right;cursor:pointer}
 .game-list-item:hover{background:var(--primary-soft);border-color:#a9d1cf}.game-list-item strong,.game-list-item small{display:block}.game-list-item small{color:var(--muted);font-size:12px;margin-top:3px}
 .game-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;font-weight:700;margin:0 4px 10px}
+.game-author{color:var(--muted);font-size:13px;margin:0 4px 8px}
 .game-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start;gap:14px}
 .game-layout #game{min-width:0}
 .game-layout .result{position:sticky;top:18px}
@@ -52,12 +53,14 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 .answer-box span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.answer-box strong{font-size:24px}
 .answer-explanation{margin:10px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
 footer{text-align:center;color:#9aa0a9;font-size:12px;margin-top:24px}
+.suggestion{margin-top:12px;padding:12px 14px}.suggestion .eyebrow{margin-bottom:2px;font-size:10px}.suggestion h2{display:inline;margin:0 8px 0 0;font-size:17px}.suggestion p{display:inline;color:var(--muted);margin:0;font-size:12px}.suggestion-form{display:grid;grid-template-columns:1.4fr 1fr 1.4fr 1fr auto;gap:6px;margin-top:9px}.suggestion-form input{min-width:0;border:1px solid #cfd3d9;border-radius:8px;padding:7px 9px;font-size:13px}.suggestion-form input:nth-child(3){grid-column:auto}.suggestion-form button{justify-self:stretch;padding:7px 12px;font-size:13px}
 .hidden{display:none!important}
 code{font-family:monospace}
 @media(max-width:520px){
   .app{padding-top:14px}.topbar{align-items:flex-start}h1{font-size:28px}
   .intro-card{padding:36px 20px}.guess-row{flex-direction:column}.guess-row button{width:100%}
   .game-meta{font-size:12px}.stats div{min-width:0;flex:1}.word{font-size:15px;padding-inline:9px}
+  .suggestion{padding:11px 12px}.suggestion h2{display:block;margin:0 0 2px}.suggestion p{display:block}.suggestion-form{grid-template-columns:1fr}.suggestion-form input:nth-child(3){grid-column:auto}.suggestion-form button{width:100%}
 }
 @media(max-width:760px){
   .game-layout{display:flex;flex-direction:column}

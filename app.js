@@ -4,6 +4,7 @@ let revealed = 1;
 let guesses = 0;
 let finished = false;
 const STATS_KEY = "the-last-word-stats";
+const SUGGESTION_EMAIL = "replace-with-your-email@example.com";
 
 
 /* =========================================
@@ -71,6 +72,7 @@ function parseGamesCsv(csvText) {
       return {
         id: Number(game.id),
         date: game.date,
+        author: game.author || "צוות המילה האחרונה",
         words: String(game.words).split("|").map(word => word.trim()).filter(Boolean),
         answers: String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean),
         explanation: game.explanation
@@ -100,7 +102,7 @@ function toIsoDate(dateString) {
 
 
 async function loadGames() {
-  const response = await fetch("games.csv?v=2");
+  const response = await fetch("games.csv?v=3");
 
   if (!response.ok) {
     throw new Error(`Unable to load games.csv (${response.status})`);
@@ -385,6 +387,14 @@ function startGame(selectedGame) {
       currentGame.date
         ? formatDate(currentGame.date)
         : "";
+  }
+
+  const gameAuthor = $("gameAuthor");
+
+  if (gameAuthor) {
+    gameAuthor.textContent = currentGame.author
+      ? `מאת ${currentGame.author}`
+      : "";
   }
 
 
@@ -718,6 +728,25 @@ function shareResult() {
 }
 
 
+function submitSuggestion(event) {
+  event.preventDefault();
+
+  const words = $("suggestionWords").value.trim();
+  const answer = $("suggestionAnswer").value.trim();
+  const explanation = $("suggestionExplanation").value.trim();
+  const author = $("suggestionAuthor").value.trim() || "לא צוין";
+  const subject = "הצעת משחק חדש - המילה האחרונה";
+  const body = [
+    `רמזים: ${words}`,
+    `תשובה: ${answer}`,
+    `הסבר: ${explanation || "לא צוין"}`,
+    `מציע/ה: ${author}`
+  ].join("\n");
+
+  window.location.href = `mailto:${SUGGESTION_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+
 /* =========================================
    GAME LIST
 ========================================= */
@@ -964,6 +993,12 @@ function initialize() {
 
   if (quitBtn) {
     quitBtn.addEventListener("click", () => finish(false, true));
+  }
+
+  const suggestionForm = $("suggestionForm");
+
+  if (suggestionForm) {
+    suggestionForm.addEventListener("submit", submitSuggestion);
   }
 
   if (guess) {
