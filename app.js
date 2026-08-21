@@ -642,6 +642,15 @@ function finish(won, quit = false) {
 
   if (result) {
     result.classList.remove("hidden");
+
+    if (won) {
+      window.setTimeout(() => {
+        result.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }, 0);
+    }
   }
 
 
