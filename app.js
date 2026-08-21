@@ -645,9 +645,9 @@ function finish(won, quit = false) {
 
     if (won) {
       window.setTimeout(() => {
-        result.scrollIntoView({
+        window.scrollTo({
+          top: Math.max(0, result.offsetTop - 12),
           behavior: "smooth",
-          block: "center"
         });
       }, 0);
     }
