@@ -54,7 +54,7 @@ function parseCsvLine(line) {
 
 function parseGamesCsv(csvText) {
   const lines = csvText.trim().split(/\r?\n/);
-  const headers = parseCsvLine(lines.shift());
+  const headers = parseCsvLine(lines.shift()).map(header => header.replace(/^\uFEFF/, ""));
 
   return lines
     .filter(line => line.trim())
@@ -64,19 +64,43 @@ function parseGamesCsv(csvText) {
         headers.map((header, index) => [header, values[index] || ""])
       );
 
+      if (!game.id || !game.date || !game.words || !game.answers) {
+        return null;
+      }
+
       return {
         id: Number(game.id),
         date: game.date,
-        words: game.words.split("|").map(word => word.trim()).filter(Boolean),
-        answers: game.answers.split("|").map(answer => answer.trim()).filter(Boolean),
+        words: String(game.words).split("|").map(word => word.trim()).filter(Boolean),
+        answers: String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean),
         explanation: game.explanation
       };
-    });
+    })
+    .filter(Boolean);
+}
+
+
+function toIsoDate(dateString) {
+  if (!dateString) {
+    return "";
+  }
+
+  const parts = dateString.split(/[/-]/);
+
+  if (parts.length !== 3) {
+    return dateString;
+  }
+
+  if (parts[0].length === 4) {
+    return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+  }
+
+  return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
 }
 
 
 async function loadGames() {
-  const response = await fetch("games.csv?v=1");
+  const response = await fetch("games.csv?v=2");
 
   if (!response.ok) {
     throw new Error(`Unable to load games.csv (${response.status})`);
@@ -150,7 +174,7 @@ function formatDate(dateString) {
     return "";
   }
 
-  const parts = dateString.split("-");
+  const parts = toIsoDate(dateString).split("-");
 
   if (parts.length !== 3) {
     return dateString;
@@ -201,7 +225,7 @@ function getDefaultGame() {
   ----------------------------------------- */
 
   const todayGame = GAMES.find(
-    game => game.date === today
+    game => game.date && toIsoDate(game.date) === today
   );
 
   if (todayGame) {
@@ -221,12 +245,12 @@ function getDefaultGame() {
 
   const previousGames = GAMES
     .filter(game => {
-      return game.date && game.date <= today;
+      return game.date && toIsoDate(game.date) <= today;
     })
     .sort((a, b) => {
 
       if (a.date && b.date) {
-        return b.date.localeCompare(a.date);
+        return toIsoDate(b.date).localeCompare(toIsoDate(a.date));
       }
 
       return b.id - a.id;
@@ -246,16 +270,16 @@ function getDefaultGame() {
 
   /* -----------------------------------------
      3. Fallback:
-        If dates are missing completely,
-        use the highest ID.
+        Use the latest dated game that has passed.
   ----------------------------------------- */
 
   const fallbackGame = [...GAMES]
-    .sort((a, b) => b.id - a.id)[0];
+    .filter(game => game.date && toIsoDate(game.date) <= today)
+    .sort((a, b) => toIsoDate(b.date).localeCompare(toIsoDate(a.date)))[0];
 
   console.log(
     "No dated games. Using latest game:",
-    fallbackGame.id
+    fallbackGame ? fallbackGame.id : "none"
   );
 
   return fallbackGame;
@@ -276,18 +300,12 @@ function getAvailableGames() {
 
   return [...GAMES]
     .filter(game => {
-
-      // משחקים ללא תאריך עדיין יוצגו
-      if (!game.date) {
-        return true;
-      }
-
-      return game.date <= today;
+      return game.date && toIsoDate(game.date) <= today;
     })
     .sort((a, b) => {
 
       if (a.date && b.date) {
-        return b.date.localeCompare(a.date);
+        return toIsoDate(b.date).localeCompare(toIsoDate(a.date));
       }
 
       return b.id - a.id;
@@ -587,12 +605,18 @@ function finish(won, quit = false) {
 
   finished = true;
 
+  if (quit && currentGame) {
+    revealed = currentGame.words.length;
+    renderWords();
+    updateStats();
+  }
+
 
   const game = $("game");
   const result = $("result");
 
 
-  if (game && !won) {
+  if (game && !won && !quit) {
     game.classList.add("hidden");
   }
 
