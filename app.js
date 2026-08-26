@@ -1,5 +1,6 @@
 let currentGame = null;
 let GAMES = [];
+let GAME_STATISTICS = [];
 let revealed = 1;
 let guesses = 0;
 let finished = false;
@@ -108,6 +109,92 @@ async function loadGames() {
   }
 
   GAMES = parseGamesCsv(await response.text());
+
+  try {
+    const statisticsResponse = await fetch("statistics.csv?v=1");
+
+    if (statisticsResponse.ok) {
+      GAME_STATISTICS = parseStatisticsCsv(await statisticsResponse.text());
+    }
+  } catch (error) {
+    GAME_STATISTICS = [];
+  }
+}
+
+
+function parseStatisticsCsv(csvText) {
+  const lines = csvText.trim().split(/\r?\n/);
+
+  if (lines.length < 2) {
+    return [];
+  }
+
+  const headers = parseCsvLine(lines.shift()).map(header => header.replace(/^\uFEFF/, ""));
+
+  return lines
+    .filter(line => line.trim())
+    .map(line => {
+      const values = parseCsvLine(line);
+      const row = Object.fromEntries(
+        headers.map((header, index) => [header, values[index] || ""])
+      );
+      const guesses = String(row.guesses)
+        .split("|")
+        .map(value => Number(value.trim()))
+        .filter(value => Number.isFinite(value) && value > 0);
+
+      return {
+        id: Number(row.id),
+        guesses
+      };
+    })
+    .filter(row => Number.isInteger(row.id) && row.guesses.length > 0);
+}
+
+
+function getGameStatistics(game) {
+  if (!game) {
+    return null;
+  }
+
+  const row = GAME_STATISTICS.find(statistics => statistics.id === game.id);
+
+  if (!row) {
+    return null;
+  }
+
+  const sortedGuesses = [...row.guesses].sort((a, b) => a - b);
+  const middle = Math.floor(sortedGuesses.length / 2);
+  const median = sortedGuesses.length % 2 === 0
+    ? (sortedGuesses[middle - 1] + sortedGuesses[middle]) / 2
+    : sortedGuesses[middle];
+  const average = sortedGuesses.reduce((sum, value) => sum + value, 0) / sortedGuesses.length;
+
+  return { average, median };
+}
+
+
+function formatGuessCount(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+
+function renderLatestGameStatistics(game) {
+  const panel = $("latestGameStatistics");
+  const averageEl = $("averageGuesses");
+  const medianEl = $("medianGuesses");
+  const statistics = getGameStatistics(game);
+
+  if (!panel || !averageEl || !medianEl) {
+    return;
+  }
+
+  panel.classList.toggle("hidden", !statistics);
+
+  if (statistics) {
+    averageEl.textContent = formatGuessCount(statistics.average);
+    medianEl.textContent = formatGuessCount(statistics.median);
+  }
 }
 
 
@@ -598,11 +685,17 @@ function submitGuess() {
     renderWords();
     updateStats();
 
-    if (window.innerWidth <= 760 && feedback) {
+    if (window.innerWidth <= 760) {
       window.setTimeout(() => {
-        feedback.scrollIntoView({
+        const game = $("game");
+
+        if (!game) {
+          return;
+        }
+
+        game.scrollIntoView({
           behavior: "smooth",
-          block: "center"
+          block: "start"
         });
       }, 0);
     }
@@ -938,6 +1031,7 @@ function initialize() {
 
   renderGameList();
   renderStats();
+  renderLatestGameStatistics(defaultGame);
 
 
   /* -----------------------------------------
@@ -989,6 +1083,28 @@ function initialize() {
       "click",
       toggleGameSelector
     );
+  }
+
+
+  const instructionsDialog = $("instructionsDialog");
+  const instructionsBtn = $("instructionsBtn");
+  const closeInstructionsBtn = $("closeInstructionsBtn");
+  const instructionsDoneBtn = $("instructionsDoneBtn");
+
+  if (instructionsDialog && instructionsBtn) {
+    instructionsBtn.addEventListener("click", () => instructionsDialog.showModal());
+
+    [closeInstructionsBtn, instructionsDoneBtn].forEach(button => {
+      if (button) {
+        button.addEventListener("click", () => instructionsDialog.close());
+      }
+    });
+
+    instructionsDialog.addEventListener("click", event => {
+      if (event.target === instructionsDialog) {
+        instructionsDialog.close();
+      }
+    });
   }
 
 

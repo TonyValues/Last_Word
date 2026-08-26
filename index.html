@@ -48,7 +48,29 @@
       משחקים קודמים
     </button>
 
+    <button
+      id="instructionsBtn"
+      class="secondary"
+      type="button"
+    >
+      הוראות
+    </button>
+
   </header>
+
+  <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
+    <div class="instructions-header">
+      <h2 id="instructionsTitle">איך משחקים?</h2>
+      <button id="closeInstructionsBtn" class="dialog-close" type="button" aria-label="סגור הוראות">×</button>
+    </div>
+    <ol class="instructions-list">
+      <li>מופיעה מילה אחת מתוך רצף מילים.</li>
+      <li>נחשו מהי המילה האחרונה ברצף.</li>
+      <li>ניחוש שגוי חושף מילה נוספת.</li>
+      <li>נסו למצוא את התשובה בכמה שפחות ניחושים.</li>
+    </ol>
+    <button id="instructionsDoneBtn" class="primary" type="button">הבנתי</button>
+  </dialog>
 
 
   <!-- PREVIOUS GAMES -->
@@ -105,6 +127,20 @@
         <span>ניצחונות</span>
       </div>
     </div>
+
+    <section id="latestGameStatistics" class="latest-game-statistics hidden" aria-label="סטטיסטיקת המשחק האחרון">
+      <div class="eyebrow">סטטיסטיקת המשחק האחרון</div>
+      <div class="shared-summary">
+        <div>
+          <strong id="averageGuesses">0</strong>
+          <span>ממוצע ניחושים</span>
+        </div>
+        <div>
+          <strong id="medianGuesses">0</strong>
+          <span>חציון ניחושים</span>
+        </div>
+      </div>
+    </section>
 
   </section>
 
