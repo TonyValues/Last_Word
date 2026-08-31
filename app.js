@@ -937,15 +937,13 @@ async function shareResult() {
   if (!currentGame) return;
 
   const shareButton = $("shareBtn");
-  const shareText = `המילה האחרונה #${String(currentGame.id).padStart(3, "0")} | ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`;
-  const resultTitle = $("resultTitle")?.textContent || "המילה האחרונה";
-  const resultText = $("resultText")?.textContent || "";
-  const answer = $("answer")?.textContent || "";
-  const explanation = $("answerExplanation")?.textContent || "";
+  const shareText = `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! 🎯🔥 תנסו לנצח אותי 😎`;
+  const resultTitle = "הצלחתי!";
+  const resultText = `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}!`;
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
-  canvas.height = 1350;
+  canvas.height = 1200;
   const ctx = canvas.getContext("2d");
 
   if (!ctx) {
@@ -968,7 +966,7 @@ async function shareResult() {
   ctx.fillText("המילה האחרונה", canvas.width / 2, 160);
 
   ctx.fillStyle = "#17212b";
-  ctx.font = "700 76px 'Segoe UI', Arial";
+  ctx.font = "700 72px 'Segoe UI', Arial";
   ctx.fillText(resultTitle, canvas.width / 2, 260);
 
   ctx.fillStyle = "#65717b";
@@ -981,29 +979,29 @@ async function shareResult() {
   const cardX = 120;
   const cardY = 430;
   const cardW = canvas.width - 240;
-  const cardH = 500;
+  const cardH = 420;
   ctx.fillRect(cardX, cardY, cardW, cardH);
   ctx.strokeRect(cardX, cardY, cardW, cardH);
 
   ctx.fillStyle = "#0d5960";
-  ctx.font = "700 30px 'Segoe UI', Arial";
-  ctx.fillText("התשובה", canvas.width / 2, 510);
+  ctx.font = "700 34px 'Segoe UI', Arial";
+  ctx.fillText("אתגר", canvas.width / 2, 510);
 
   ctx.fillStyle = "#17212b";
-  ctx.font = "800 72px 'Segoe UI', Arial";
-  ctx.fillText(answer || "?", canvas.width / 2, 610);
+  ctx.font = "700 52px 'Segoe UI', Arial";
+  ctx.fillText("תנסה לנצח אותי! 😎", canvas.width / 2, 610);
 
-  if (explanation) {
-    wrapAndFillText(ctx, explanation, canvas.width / 2, 690, 32, 440, "#65717b", "500");
-  }
+  ctx.fillStyle = "#1f9d5a";
+  ctx.font = "700 32px 'Segoe UI', Arial";
+  ctx.fillText("🎯🔥🏆", canvas.width / 2, 700);
 
   ctx.fillStyle = "#0d5960";
   ctx.font = "700 28px 'Segoe UI', Arial";
-  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 1115);
+  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 1030);
 
   ctx.fillStyle = "#17212b";
-  ctx.font = "700 32px 'Segoe UI', Arial";
-  ctx.fillText(`${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`, canvas.width / 2, 1175);
+  ctx.font = "700 30px 'Segoe UI', Arial";
+  ctx.fillText(`${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`, canvas.width / 2, 1085);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
 
@@ -1063,33 +1061,6 @@ function fallbackTextShare(shareText, shareButton) {
     window.setTimeout(() => {
       if (shareButton) shareButton.textContent = "שתף תוצאה";
     }, 1800);
-  }
-}
-
-function wrapAndFillText(ctx, text, centerX, startY, lineHeight, maxWidth, color, weight) {
-  const words = text.split(" ");
-  let line = "";
-  let y = startY;
-
-  ctx.fillStyle = color;
-  ctx.font = `${weight} ${lineHeight}px 'Segoe UI', Arial`;
-
-  for (let index = 0; index < words.length; index++) {
-    const testLine = line ? `${line} ${words[index]}` : words[index];
-    const measure = ctx.measureText(testLine).width;
-
-    if (measure > maxWidth && line) {
-      ctx.textAlign = "center";
-      ctx.fillText(line, centerX, y);
-      line = words[index];
-      y += lineHeight + 8;
-    } else {
-      line = testLine;
-    }
-  }
-
-  if (line) {
-    ctx.fillText(line, centerX, y);
   }
 }
 
@@ -1349,15 +1320,15 @@ function initialize() {
     }
 
     try {
-      localStorage.setItem(UPDATES_KEY, "1");
+      sessionStorage.setItem(UPDATES_KEY, "1");
     } catch (error) {
-      // Private browsing can disable local storage; the popup may reappear, but the app still works.
+      // Private browsing can disable session storage; the popup may reappear, but the app still works.
     }
   }
 
   if (updatesDialog) {
     try {
-      const hidden = localStorage.getItem(UPDATES_KEY) === "1";
+      const hidden = sessionStorage.getItem(UPDATES_KEY) === "1";
       if (!hidden) {
         updatesDialog.showModal();
       }
