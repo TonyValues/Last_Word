@@ -4,7 +4,9 @@ let GAME_STATISTICS = [];
 let revealed = 1;
 let guesses = 0;
 let finished = false;
+let clueOpen = false;
 const STATS_KEY = "the-last-word-stats";
+const UPDATES_KEY = "the-last-word-updates-hidden";
 
 
 /* =========================================
@@ -75,7 +77,8 @@ function parseGamesCsv(csvText) {
         author: game.author || "צוות המילה האחרונה",
         words: String(game.words).split("|").map(word => word.trim()).filter(Boolean),
         answers: String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean),
-        explanation: game.explanation
+        explanation: game.explanation,
+        direction: game.direction || game.clueDirection || game.arrow || game.hintDirection || ""
       };
     })
     .filter(Boolean);
@@ -195,6 +198,84 @@ function renderLatestGameStatistics(game) {
     averageEl.textContent = formatGuessCount(statistics.average);
     medianEl.textContent = formatGuessCount(statistics.median);
   }
+}
+
+
+function getDirectionInfo(game) {
+  if (!game) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון" };
+  }
+
+  const rawValue = String(
+    game.direction ??
+    game.clueDirection ??
+    game.arrow ??
+    game.hintDirection ??
+    ""
+  ).trim();
+
+  const normalized = normalize(rawValue);
+
+  if (!rawValue) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון" };
+  }
+
+  if (["straight", "ישר", "forward", "forwards", "direct", "down", "downward", "vertical"].includes(normalized)) {
+    return { key: "straight", symbol: "↓", label: "ישר" };
+  }
+
+  if (["reversed", "reverse", "הפוך", "backward", "backwards", "up", "upward"].includes(normalized)) {
+    return { key: "reversed", symbol: "↑", label: "הפוך" };
+  }
+
+  if (["none", "no direction", "לא ידוע", "ללא כיוון", "nodirection", "equal", "equals", "same", "flat"].includes(normalized)) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון" };
+  }
+
+  if (normalized.includes("down") || normalized.includes("straight")) {
+    return { key: "straight", symbol: "↓", label: "ישר" };
+  }
+
+  if (normalized.includes("reverse") || normalized.includes("reversed") || normalized.includes("up")) {
+    return { key: "reversed", symbol: "↑", label: "הפוך" };
+  }
+
+  if (normalized.includes("equal") || normalized.includes("none") || normalized.includes("no")) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון" };
+  }
+
+  return { key: "none", symbol: "↔", label: "ללא כיוון" };
+}
+
+
+function renderClueButton() {
+  const clueToggle = $("clueToggle");
+  const clueValue = $("clueValue");
+
+  if (!clueToggle || !clueValue || !currentGame) {
+    return;
+  }
+
+  const directionInfo = getDirectionInfo(currentGame);
+
+  clueToggle.classList.toggle("is-open", clueOpen);
+  clueValue.textContent = clueOpen ? directionInfo.symbol : "?";
+  clueToggle.setAttribute(
+    "aria-label",
+    clueOpen
+      ? `כיוון הרמז: ${directionInfo.label}`
+      : "הצג כיוון רמז"
+  );
+}
+
+
+function toggleClue() {
+  if (!currentGame) {
+    return;
+  }
+
+  clueOpen = !clueOpen;
+  renderClueButton();
 }
 
 
@@ -424,6 +505,7 @@ function startGame(selectedGame) {
   revealed = 1;
   guesses = 0;
   finished = false;
+  clueOpen = false;
 
 
   const intro = $("intro");
@@ -501,6 +583,7 @@ function startGame(selectedGame) {
 
   renderWords();
   updateStats();
+  renderClueButton();
 
 
   if (game) {
@@ -845,21 +928,163 @@ function finish(won, quit = false) {
 }
 
 
-function shareResult() {
+async function shareResult() {
   if (!currentGame) return;
 
-  const shareText = `המילה האחרונה #${String(currentGame.id).padStart(3, "0")} | ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`;
   const shareButton = $("shareBtn");
+  const shareText = `המילה האחרונה #${String(currentGame.id).padStart(3, "0")} | ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`;
+  const resultTitle = $("resultTitle")?.textContent || "המילה האחרונה";
+  const resultText = $("resultText")?.textContent || "";
+  const answer = $("answer")?.textContent || "";
+  const explanation = $("answerExplanation")?.textContent || "";
 
-  if (navigator.share) {
-    navigator.share({ title: "המילה האחרונה", text: shareText }).catch(() => {});
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    fallbackTextShare(shareText, shareButton);
     return;
   }
 
+  ctx.fillStyle = "#eef2f5";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#dfeef0");
+  gradient.addColorStop(1, "#f7fafc");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 52px 'Segoe UI', Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("המילה האחרונה", canvas.width / 2, 160);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "700 76px 'Segoe UI', Arial";
+  ctx.fillText(resultTitle, canvas.width / 2, 260);
+
+  ctx.fillStyle = "#65717b";
+  ctx.font = "500 32px 'Segoe UI', Arial";
+  ctx.fillText(resultText, canvas.width / 2, 330);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#dce3e8";
+  ctx.lineWidth = 2;
+  const cardX = 120;
+  const cardY = 430;
+  const cardW = canvas.width - 240;
+  const cardH = 500;
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+  ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 30px 'Segoe UI', Arial";
+  ctx.fillText("התשובה", canvas.width / 2, 510);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "800 72px 'Segoe UI', Arial";
+  ctx.fillText(answer || "?", canvas.width / 2, 610);
+
+  if (explanation) {
+    wrapAndFillText(ctx, explanation, canvas.width / 2, 690, 32, 440, "#65717b", "500");
+  }
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 28px 'Segoe UI', Arial";
+  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 1115);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "700 32px 'Segoe UI', Arial";
+  ctx.fillText(`${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`, canvas.width / 2, 1175);
+
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+
+  if (!blob) {
+    fallbackTextShare(shareText, shareButton);
+    return;
+  }
+
+  const file = new File([blob], "last-word-result.png", { type: "image/png" });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: "המילה האחרונה",
+        text: shareText,
+        files: [file]
+      });
+      return;
+    } catch (error) {
+      // fall through to download/share URL fallback
+    }
+  }
+
+  const downloadLink = document.createElement("a");
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = "last-word-result.png";
+  downloadLink.click();
+
+  const whatsappText = encodeURIComponent(`${shareText}\n${window.location.href}`);
+  const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+  if (shareButton) {
+    shareButton.textContent = "התוצאה נשלחה";
+    window.setTimeout(() => {
+      shareButton.textContent = "שתף תוצאה";
+    }, 1800);
+  }
+}
+
+function fallbackTextShare(shareText, shareButton) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(shareText).then(() => {
       if (shareButton) shareButton.textContent = "התוצאה הועתקה";
+      window.setTimeout(() => {
+        if (shareButton) shareButton.textContent = "שתף תוצאה";
+      }, 1800);
     }).catch(() => {});
+    return;
+  }
+
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+  if (shareButton) {
+    shareButton.textContent = "פתח WhatsApp";
+    window.setTimeout(() => {
+      if (shareButton) shareButton.textContent = "שתף תוצאה";
+    }, 1800);
+  }
+}
+
+function wrapAndFillText(ctx, text, centerX, startY, lineHeight, maxWidth, color, weight) {
+  const words = text.split(" ");
+  let line = "";
+  let y = startY;
+
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${lineHeight}px 'Segoe UI', Arial`;
+
+  for (let index = 0; index < words.length; index++) {
+    const testLine = line ? `${line} ${words[index]}` : words[index];
+    const measure = ctx.measureText(testLine).width;
+
+    if (measure > maxWidth && line) {
+      ctx.textAlign = "center";
+      ctx.fillText(line, centerX, y);
+      line = words[index];
+      y += lineHeight + 8;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (line) {
+    ctx.fillText(line, centerX, y);
   }
 }
 
@@ -1032,6 +1257,7 @@ function initialize() {
   renderGameList();
   renderStats();
   renderLatestGameStatistics(defaultGame);
+  renderClueButton();
 
 
   /* -----------------------------------------
@@ -1105,6 +1331,53 @@ function initialize() {
         instructionsDialog.close();
       }
     });
+  }
+
+
+  const updatesDialog = $("updatesDialog");
+  const closeUpdatesBtn = $("closeUpdatesBtn");
+  const updatesDoneBtn = $("updatesDoneBtn");
+
+  function dismissUpdatesDialog() {
+    if (updatesDialog) {
+      updatesDialog.close();
+    }
+
+    try {
+      localStorage.setItem(UPDATES_KEY, "1");
+    } catch (error) {
+      // Private browsing can disable local storage; the popup may reappear, but the app still works.
+    }
+  }
+
+  if (updatesDialog) {
+    try {
+      const hidden = localStorage.getItem(UPDATES_KEY) === "1";
+      if (!hidden) {
+        updatesDialog.showModal();
+      }
+    } catch (error) {
+      updatesDialog.showModal();
+    }
+
+    [closeUpdatesBtn, updatesDoneBtn].forEach(button => {
+      if (button) {
+        button.addEventListener("click", dismissUpdatesDialog);
+      }
+    });
+
+    updatesDialog.addEventListener("click", event => {
+      if (event.target === updatesDialog) {
+        dismissUpdatesDialog();
+      }
+    });
+  }
+
+
+  const clueToggle = $("clueToggle");
+
+  if (clueToggle) {
+    clueToggle.addEventListener("click", toggleClue);
   }
 
 
