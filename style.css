@@ -40,7 +40,7 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 .game-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start;gap:14px}
 .game-layout #game{min-width:0}
 .game-layout .result{position:sticky;top:18px}
-.words-card{padding:10px}.clue-toggle-wrap{display:flex;justify-content:center;margin-bottom:12px}.clue-toggle{width:56px;height:56px;border:2px solid var(--primary);border-radius:50%;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-size:30px;font-weight:800;cursor:pointer;transition:transform .15s,background .15s,color .15s,box-shadow .15s}.clue-toggle:hover{transform:translateY(-1px)}.clue-toggle.is-open{background:var(--primary);color:#fff;box-shadow:0 8px 20px #0d596033}.words{display:grid;grid-template-columns:1fr;gap:7px}
+.words-card{padding:10px}.clue-toggle-wrap{display:flex;justify-content:center;margin-bottom:12px}.clue-toggle{width:56px;height:56px;border:2px solid var(--primary);border-radius:50%;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-size:30px;font-weight:800;cursor:pointer;transition:transform .15s,background .15s,color .15s,border-color .15s,box-shadow .15s}.clue-toggle:hover{transform:translateY(-1px)}.clue-toggle.is-open{box-shadow:0 8px 20px rgba(13,89,96,.2)}.words{display:grid;grid-template-columns:1fr;gap:7px}
 .word{min-height:46px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px 12px;font-size:17px;font-weight:700;background:#fafbfc}
 .word.hidden-word{color:#b7bcc4;background:#f4f5f7;justify-content:center;font-size:25px;letter-spacing:4px}
 .word.target{border-color:#cfd3d9}
