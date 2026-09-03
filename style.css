@@ -42,9 +42,9 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 @media(prefers-reduced-motion:reduce){.word-revealed{animation:none}}
 .guess-card{margin-top:10px;padding:14px}
 .guess-card label{display:block;font-weight:800;margin-bottom:10px}
-.guess-card-collapsed{cursor:pointer}
-.guess-card-collapsed label{margin:0;text-align:center;cursor:pointer}
-.guess-card-collapsed label::after{content:"  לחצו כאן כדי לנחש שוב";color:var(--primary);font-size:13px}
+.guess-card-collapsed{padding:11px 14px;cursor:pointer;min-height:46px}
+.guess-card-collapsed label{display:block;margin:0;text-align:center;cursor:pointer;font-size:0}
+.guess-card-collapsed label::after{content:"לחצו כאן כדי לנחש שוב";color:var(--primary);font-size:13px;font-weight:800}
 .guess-card-collapsed .guess-row,.guess-card-collapsed .feedback,.guess-card-collapsed .quit-button{display:none}
 .guess-row{display:flex;gap:9px}
 .guess-row input{flex:1;min-width:0;border:1px solid #cfd3d9;border-radius:12px;padding:12px 14px;outline:none}
