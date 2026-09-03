@@ -394,7 +394,7 @@ function isLatestPublishedGame(game) {
    START GAME
 ========================================= */
 
-function startGame(selectedGame) {
+function startGame(selectedGame, restart = false) {
 
   if (!selectedGame) {
     showNoGames();
@@ -403,7 +403,7 @@ function startGame(selectedGame) {
 
   currentGame = selectedGame;
 
-  const savedState = getSavedGameState(selectedGame);
+  const savedState = restart ? null : getSavedGameState(selectedGame);
   revealed = savedState?.revealed || 1;
   guesses = savedState?.guesses || 0;
   finished = savedState?.finished || false;
@@ -821,7 +821,7 @@ function finish(won, quit = false) {
 
     const againBtn = $("againBtn");
     if (againBtn) {
-      againBtn.classList.toggle("hidden", isLatestPublishedGame(currentGame));
+      againBtn.classList.remove("hidden");
     }
 
     const resultTitle = $("resultTitle");
@@ -1008,8 +1008,6 @@ async function shareResult() {
   centeredText(`משחק ${gameNumber}`, canvas.width / 2, 547, 320, "700 30px 'Segoe UI', Arial", colors.accent);
 
   centeredText(wonGame ? "תוצאה" : "האתגר שלכם", canvas.width / 2, 665, 650, "700 38px 'Segoe UI', Arial", colors.dark);
-
-  centeredText(wonGame ? (solvedOnFirstGuess ? "בלי רמזים, בניחוש הראשון" : "בלי ספוילרים") : "בלי ספוילרים, כמובן", canvas.width / 2, 725, 760, "500 28px 'Segoe UI', Arial", "#65717b");
 
   ctx.fillStyle = colors.accent;
   ctx.font = "700 72px 'Segoe UI', Arial";
@@ -1244,26 +1242,6 @@ function showLoadError() {
 }
 
 
-function goToTodayGame() {
-  const todayGame = getDefaultGame();
-
-  if (!todayGame) {
-    showNoGames();
-    return;
-  }
-
-  if (currentGame?.id === todayGame.id) {
-    const result = $("result");
-    if (result) {
-      result.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    return;
-  }
-
-  startGame(todayGame);
-}
-
-
 /* =========================================
    INITIALIZATION
 ========================================= */
@@ -1311,7 +1289,11 @@ function initialize() {
 
   if (againBtn) {
 
-    againBtn.addEventListener("click", goToTodayGame);
+    againBtn.addEventListener("click", () => {
+      if (currentGame) {
+        startGame(currentGame, true);
+      }
+    });
   }
 
 
