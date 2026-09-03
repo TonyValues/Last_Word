@@ -64,10 +64,10 @@
       <button id="closeInstructionsBtn" class="dialog-close" type="button" aria-label="סגור הוראות">×</button>
     </div>
     <ol class="instructions-list">
-      <li>נחשו מהי המילה האחרונה ברצף.</li>
-      <li>ניחוש שגוי חושף מילה נוספת.</li>
-      <li>לחצו על הרמז שמעל המילים כדי לראות את כיוון הרצף: ישר, הפוך או ללא כיוון.</li>
+      <li>נחשו מהי המילה האחרונה ברצף</li>
+      <li>ניחוש שגוי חושף מילה נוספת</li>
       <li>נסו למצוא את המילה האחרונה בכמה שפחות ניחושים.</li>
+      <li>לחצו על הרמז שמעל המילים כדי לראות את כיוון הרצף: ישר, הפוך או ללא כיוון.</li>
       <li>אפשר לראות פתרונות של משחקים קודמים בארכיון כשלוחצים על וותר</li>
     </ol>
     <button id="instructionsDoneBtn" class="primary" type="button">הבנתי</button>
@@ -134,30 +134,13 @@
       התחל משחק
     </button>
 
-    <div class="player-summary" aria-label="הסטטיסטיקה שלך">
-      <div>
-        <strong id="gamesPlayed">0</strong>
-        <span>משחקים</span>
-      </div>
-      <div>
-        <strong id="gamesWon">0</strong>
-        <span>ניצחונות</span>
-      </div>
-    </div>
-
-    <section id="latestGameStatistics" class="latest-game-statistics hidden" aria-label="סטטיסטיקת המשחק האחרון">
-      <div class="eyebrow">סטטיסטיקת המשחק האחרון</div>
-      <div class="shared-summary">
-        <div>
-          <strong id="averageGuesses">0</strong>
-          <span>ממוצע ניחושים</span>
-        </div>
-        <div>
-          <strong id="medianGuesses">0</strong>
-          <span>חציון ניחושים</span>
-        </div>
-      </div>
-    </section>
+    <button
+      id="retryBtn"
+      class="primary hidden"
+      type="button"
+    >
+      נסה שוב
+    </button>
 
   </section>
 
@@ -180,7 +163,7 @@
       <span id="gameDate">
       </span>
 
-      <span id="revealedCount">
+      <span id="revealedCount" aria-live="polite">
         1 / 5 מילים נחשפו
       </span>
 
@@ -208,6 +191,7 @@
       <div
         id="words"
         class="words"
+        aria-live="polite"
       ></div>
 
     </section>
@@ -256,7 +240,7 @@
     </section>
 
 
-    <div class="stats">
+    <div class="guess-count">
       <div>
         <strong id="guesses">0</strong>
         <span>ניחושים</span>
@@ -289,7 +273,7 @@
     </div>
 
 
-    <h2 id="resultTitle">
+    <h2 id="resultTitle" tabindex="-1">
       מצאת את המילה
     </h2>
 

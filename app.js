@@ -1,12 +1,11 @@
 let currentGame = null;
 let GAMES = [];
-let GAME_STATISTICS = [];
 let revealed = 1;
 let guesses = 0;
 let finished = false;
 let wonGame = false;
 let clueOpen = false;
-const STATS_KEY = "the-last-word-stats";
+const GAME_STATE_KEY = "the-last-word-current-game";
 const UPDATES_KEY = "the-last-word-updates-hidden";
 
 
@@ -72,12 +71,19 @@ function parseGamesCsv(csvText) {
         return null;
       }
 
+      const words = String(game.words).split("|").map(word => word.trim()).filter(Boolean);
+      const answers = String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean);
+
+      if (words.length === 0 || answers.length === 0) {
+        return null;
+      }
+
       return {
         id: Number(game.id),
         date: game.date,
         author: game.author || "צוות המילה האחרונה",
-        words: String(game.words).split("|").map(word => word.trim()).filter(Boolean),
-        answers: String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean),
+        words,
+        answers,
         explanation: game.explanation,
         direction: game.direction || game.clueDirection || game.arrow || game.hintDirection || game.hint || "",
         arrow: game.arrow || game.hintDirection || game.direction || game.clueDirection || game.hint || ""
@@ -114,91 +120,41 @@ async function loadGames() {
   }
 
   GAMES = parseGamesCsv(await response.text());
+}
+
+
+function getSavedGameState(game) {
+  if (!game || !isLatestPublishedGame(game)) {
+    return null;
+  }
 
   try {
-    const statisticsResponse = await fetch("statistics.csv?v=1");
+    const savedState = JSON.parse(localStorage.getItem(GAME_STATE_KEY));
 
-    if (statisticsResponse.ok) {
-      GAME_STATISTICS = parseStatisticsCsv(await statisticsResponse.text());
-    }
+    return savedState && savedState.id === game.id
+      ? savedState
+      : null;
   } catch (error) {
-    GAME_STATISTICS = [];
-  }
-}
-
-
-function parseStatisticsCsv(csvText) {
-  const lines = csvText.trim().split(/\r?\n/);
-
-  if (lines.length < 2) {
-    return [];
-  }
-
-  const headers = parseCsvLine(lines.shift()).map(header => header.replace(/^\uFEFF/, ""));
-
-  return lines
-    .filter(line => line.trim())
-    .map(line => {
-      const values = parseCsvLine(line);
-      const row = Object.fromEntries(
-        headers.map((header, index) => [header, values[index] || ""])
-      );
-      const guesses = String(row.guesses)
-        .split("|")
-        .map(value => Number(value.trim()))
-        .filter(value => Number.isFinite(value) && value > 0);
-
-      return {
-        id: Number(row.id),
-        guesses
-      };
-    })
-    .filter(row => Number.isInteger(row.id) && row.guesses.length > 0);
-}
-
-
-function getGameStatistics(game) {
-  if (!game) {
     return null;
   }
-
-  const row = GAME_STATISTICS.find(statistics => statistics.id === game.id);
-
-  if (!row) {
-    return null;
-  }
-
-  const sortedGuesses = [...row.guesses].sort((a, b) => a - b);
-  const middle = Math.floor(sortedGuesses.length / 2);
-  const median = sortedGuesses.length % 2 === 0
-    ? (sortedGuesses[middle - 1] + sortedGuesses[middle]) / 2
-    : sortedGuesses[middle];
-  const average = sortedGuesses.reduce((sum, value) => sum + value, 0) / sortedGuesses.length;
-
-  return { average, median };
 }
 
 
-function formatGuessCount(value) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-
-function renderLatestGameStatistics(game) {
-  const panel = $("latestGameStatistics");
-  const averageEl = $("averageGuesses");
-  const medianEl = $("medianGuesses");
-  const statistics = getGameStatistics(game);
-
-  if (!panel || !averageEl || !medianEl) {
+function saveGameState() {
+  if (!currentGame || !isLatestPublishedGame(currentGame)) {
     return;
   }
 
-  panel.classList.toggle("hidden", !statistics);
-
-  if (statistics) {
-    averageEl.textContent = formatGuessCount(statistics.average);
-    medianEl.textContent = formatGuessCount(statistics.median);
+  try {
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify({
+      id: currentGame.id,
+      revealed,
+      guesses,
+      finished,
+      wonGame
+    }));
+  } catch (error) {
+    // The game still works when storage is unavailable.
   }
 }
 
@@ -285,50 +241,6 @@ function toggleClue() {
 }
 
 
-function getStats() {
-  const emptyStats = { played: 0, won: 0 };
-
-  try {
-    const savedStats = JSON.parse(localStorage.getItem(STATS_KEY));
-
-    return savedStats
-      ? { ...emptyStats, ...savedStats }
-      : emptyStats;
-  } catch (error) {
-    return emptyStats;
-  }
-}
-
-
-function saveStats(won) {
-  const stats = getStats();
-
-  stats.played++;
-
-  if (won) {
-    stats.won++;
-  }
-
-  try {
-    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-  } catch (error) {
-    // Private browsing can disable local storage; the game still works.
-  }
-
-  renderStats();
-}
-
-
-function renderStats() {
-  const stats = getStats();
-  const playedEl = $("gamesPlayed");
-  const wonEl = $("gamesWon");
-
-  if (playedEl) playedEl.textContent = stats.played;
-  if (wonEl) wonEl.textContent = stats.won;
-}
-
-
 /* =========================================
    DATE
 ========================================= */
@@ -391,10 +303,6 @@ function getDefaultGame() {
 
   const today = getTodayString();
 
-  console.log("Today's date:", today);
-  console.log("Available games:", GAMES);
-
-
   /* -----------------------------------------
      1. Try today's game
   ----------------------------------------- */
@@ -404,11 +312,6 @@ function getDefaultGame() {
   );
 
   if (todayGame) {
-    console.log(
-      "Today's game:",
-      todayGame.id
-    );
-
     return todayGame;
   }
 
@@ -434,11 +337,6 @@ function getDefaultGame() {
 
   if (previousGames.length > 0) {
 
-    console.log(
-      "No game today. Using latest previous game:",
-      previousGames[0].id
-    );
-
     return previousGames[0];
   }
 
@@ -451,11 +349,6 @@ function getDefaultGame() {
   const fallbackGame = [...GAMES]
     .filter(game => game.date && toIsoDate(game.date) <= today)
     .sort((a, b) => toIsoDate(b.date).localeCompare(toIsoDate(a.date)))[0];
-
-  console.log(
-    "No dated games. Using latest game:",
-    fallbackGame ? fallbackGame.id : "none"
-  );
 
   return fallbackGame;
 }
@@ -508,10 +401,11 @@ function startGame(selectedGame) {
 
   currentGame = selectedGame;
 
-  revealed = 1;
-  guesses = 0;
-  finished = false;
-  wonGame = false;
+  const savedState = getSavedGameState(selectedGame);
+  revealed = savedState?.revealed || 1;
+  guesses = savedState?.guesses || 0;
+  finished = savedState?.finished || false;
+  wonGame = savedState?.wonGame || false;
   clueOpen = false;
 
 
@@ -589,8 +483,15 @@ function startGame(selectedGame) {
 
 
   renderWords();
-  updateStats();
+  updateGuessCount();
   renderClueButton();
+
+  if (finished) {
+    finish(wonGame, !wonGame);
+    return;
+  }
+
+  saveGameState();
 
 
   if (game) {
@@ -628,6 +529,9 @@ function renderWords() {
     if (index < revealed) {
 
       div.textContent = word;
+      if (index === revealed - 1) {
+        div.classList.add("word-revealed");
+      }
 
     } else {
 
@@ -643,6 +547,9 @@ function renderWords() {
   answerDiv.className = "word target-answer";
   const revealAnswer = wonGame || (finished && !isLatestPublishedGame(currentGame));
   answerDiv.textContent = revealAnswer ? getAnswers(currentGame)[0] || "" : "???";
+  if (revealAnswer && finished) {
+    answerDiv.classList.add("word-revealed");
+  }
   if (!revealAnswer) {
     answerDiv.classList.add("hidden-word");
   }
@@ -669,7 +576,7 @@ function renderWords() {
    LIVE STATS
 ========================================= */
 
-function updateStats() {
+function updateGuessCount() {
 
   const guessesEl = $("guesses");
 
@@ -733,6 +640,7 @@ function submitGuess() {
     guessEl.value.trim();
 
   guesses++;
+  saveGameState();
 
 
   /* -----------------------------------------
@@ -743,7 +651,7 @@ function submitGuess() {
 
     revealed = currentGame.words.length;
     renderWords();
-    updateStats();
+    updateGuessCount();
 
     finish(true);
 
@@ -758,6 +666,7 @@ function submitGuess() {
   if (revealed < currentGame.words.length) {
 
     revealed++;
+    saveGameState();
 
 
     const feedback =
@@ -774,7 +683,7 @@ function submitGuess() {
 
 
     renderWords();
-    updateStats();
+    updateGuessCount();
 
     if (window.innerWidth <= 760) {
       window.setTimeout(() => {
@@ -803,7 +712,7 @@ function submitGuess() {
       feedback.className = "feedback bad";
     }
 
-    updateStats();
+    updateGuessCount();
 
     if (window.innerWidth <= 760 && feedback) {
       window.setTimeout(() => {
@@ -827,17 +736,18 @@ function finish(won, quit = false) {
 
   finished = true;
   wonGame = won;
+  saveGameState();
 
   if (won && currentGame) {
     revealed = currentGame.words.length;
     renderWords();
-    updateStats();
+    updateGuessCount();
   }
 
   if (quit && currentGame) {
     revealed = currentGame.words.length;
     renderWords();
-    updateStats();
+    updateGuessCount();
   }
 
 
@@ -851,6 +761,16 @@ function finish(won, quit = false) {
 
   if (result) {
     result.classList.remove("hidden");
+
+    const againBtn = $("againBtn");
+    if (againBtn) {
+      againBtn.classList.toggle("hidden", isLatestPublishedGame(currentGame));
+    }
+
+    const resultTitle = $("resultTitle");
+    if (resultTitle) {
+      resultTitle.focus();
+    }
 
     if (won || quit) {
       window.setTimeout(() => {
@@ -917,9 +837,6 @@ function finish(won, quit = false) {
         ? "מצאת את המילה האחרונה"
         : "המשחק הסתיים";
   }
-
-
-  saveStats(won);
 
 
   const resultText =
@@ -993,19 +910,30 @@ async function shareResult() {
 
   ctx.fillStyle = "#0d5960";
   ctx.font = "700 34px 'Segoe UI', Arial";
-  ctx.fillText("אתגר", canvas.width / 2, 510);
+  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 510);
 
   ctx.fillStyle = "#17212b";
-  ctx.font = "700 52px 'Segoe UI', Arial";
-  ctx.fillText("תנסה לנצח אותי! 😎", canvas.width / 2, 610);
-
-  ctx.fillStyle = "#1f9d5a";
   ctx.font = "700 32px 'Segoe UI', Arial";
-  ctx.fillText("🎯🔥🏆", canvas.width / 2, 700);
+  ctx.fillText("הרמזים", canvas.width / 2, 565);
+
+  const visibleWords = currentGame.words.map((word, index) =>
+    index < revealed ? word : "•••"
+  );
+  ctx.font = "700 28px 'Segoe UI', Arial";
+  visibleWords.forEach((word, index) => {
+    ctx.fillText(word, canvas.width / 2, 610 + index * 42);
+  });
+
+  const shareAnswer = wonGame || !isLatestPublishedGame(currentGame)
+    ? getAnswers(currentGame)[0] || ""
+    : "???";
+  ctx.fillStyle = "#9a6b00";
+  ctx.font = "700 32px 'Segoe UI', Arial";
+  ctx.fillText(shareAnswer, canvas.width / 2, 820);
 
   ctx.fillStyle = "#0d5960";
   ctx.font = "700 28px 'Segoe UI', Arial";
-  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 1030);
+  ctx.fillText(wonGame ? "ניצחון" : "ויתור", canvas.width / 2, 1030);
 
   ctx.fillStyle = "#17212b";
   ctx.font = "700 30px 'Segoe UI', Arial";
@@ -1029,7 +957,9 @@ async function shareResult() {
       });
       return;
     } catch (error) {
-      // fall through to download/share URL fallback
+        if (error.name === "AbortError") {
+          return;
+        }
     }
   }
 
@@ -1057,10 +987,16 @@ function fallbackTextShare(shareText, shareButton) {
       window.setTimeout(() => {
         if (shareButton) shareButton.textContent = "שתף תוצאה";
       }, 1800);
-    }).catch(() => {});
+    }).catch(() => {
+      openWhatsAppShare(shareText, shareButton);
+    });
     return;
   }
 
+  openWhatsAppShare(shareText, shareButton);
+}
+
+function openWhatsAppShare(shareText, shareButton) {
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 
@@ -1103,9 +1039,7 @@ function renderGameList() {
       "game-list-item";
 
 
-    const isToday =
-      gameItem.date ===
-      getTodayString();
+    const isToday = toIsoDate(gameItem.date) === getTodayString();
 
 
     const dateText =
@@ -1203,44 +1137,38 @@ function showNoGames() {
 }
 
 
+function showLoadError() {
+  const intro = $("intro");
+  const game = $("game");
+  const result = $("result");
+  const title = $("introTitle");
+  const text = $("introText");
+  const startBtn = $("startBtn");
+  const retryBtn = $("retryBtn");
+
+  if (intro) intro.classList.remove("hidden");
+  if (game) game.classList.add("hidden");
+  if (result) result.classList.add("hidden");
+  if (title) title.textContent = "לא הצלחנו לטעון את המשחק";
+  if (text) text.textContent = "בדקו את החיבור ונסו שוב.";
+  if (startBtn) startBtn.classList.add("hidden");
+  if (retryBtn) {
+    retryBtn.classList.remove("hidden");
+    retryBtn.onclick = startApplication;
+  }
+}
+
+
 /* =========================================
    INITIALIZATION
 ========================================= */
 
 function initialize() {
-
-  console.log(
-    "================================="
-  );
-
-  console.log(
-    "THE LAST WORD - STARTING"
-  );
-
-  console.log(
-    "Today:",
-    getTodayString()
-  );
-
-  console.log(
-    "Games:",
-    GAMES
-  );
-
-
   const defaultGame =
     getDefaultGame();
 
 
-  console.log(
-    "Selected game:",
-    defaultGame
-  );
-
-
   renderGameList();
-  renderStats();
-  renderLatestGameStatistics(defaultGame);
   renderClueButton();
 
 
@@ -1250,6 +1178,13 @@ function initialize() {
 
   const startBtn =
     $("startBtn");
+
+  const retryBtn = $("retryBtn");
+  if (retryBtn) {
+    retryBtn.classList.add("hidden");
+    retryBtn.onclick = startApplication;
+  }
+  if (startBtn) startBtn.classList.remove("hidden");
 
   if (startBtn) {
 
@@ -1451,9 +1386,6 @@ function initialize() {
   }
 
 
-  console.log(
-    "Initialization complete."
-  );
 }
 
 
@@ -1467,7 +1399,7 @@ async function startApplication() {
     initialize();
   } catch (error) {
     console.error(error);
-    showNoGames();
+    showLoadError();
   }
 }
 
