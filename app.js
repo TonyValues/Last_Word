@@ -4,6 +4,7 @@ let revealed = 1;
 let guesses = 0;
 let finished = false;
 let wonGame = false;
+let solvedWithoutClues = false;
 let clueOpen = false;
 const GAME_STATE_KEY = "the-last-word-current-game";
 const UPDATES_KEY = "the-last-word-updates-hidden";
@@ -151,7 +152,8 @@ function saveGameState() {
       revealed,
       guesses,
       finished,
-      wonGame
+      wonGame,
+      solvedWithoutClues
     }));
   } catch (error) {
     // The game still works when storage is unavailable.
@@ -406,6 +408,7 @@ function startGame(selectedGame) {
   guesses = savedState?.guesses || 0;
   finished = savedState?.finished || false;
   wonGame = savedState?.wonGame || false;
+  solvedWithoutClues = savedState?.solvedWithoutClues || false;
   clueOpen = false;
 
 
@@ -485,6 +488,10 @@ function startGame(selectedGame) {
   renderWords();
   updateGuessCount();
   renderClueButton();
+  const guessCard = $("guessCard");
+  if (guessCard) {
+    guessCard.classList.remove("guess-card-collapsed");
+  }
 
   if (finished) {
     finish(wonGame, !wonGame);
@@ -588,23 +595,29 @@ function updateGuessCount() {
 
 function hideGuessCardBriefly() {
   const guessCard = $("guessCard");
-  const guessInput = $("guess");
 
-  if (!guessCard || !guessInput) {
+  if (!guessCard) {
     return;
   }
 
-  guessCard.classList.add("hidden");
+  guessCard.classList.add("guess-card-collapsed");
+  guessCard.setAttribute("aria-expanded", "false");
+}
 
-  window.setTimeout(() => {
-    if (finished) {
-      return;
-    }
 
-    guessCard.classList.remove("hidden");
+function revealGuessCard() {
+  const guessCard = $("guessCard");
+  const guessInput = $("guess");
+
+  if (!guessCard || finished) {
+    return;
+  }
+
+  guessCard.classList.remove("guess-card-collapsed");
+  guessCard.setAttribute("aria-expanded", "true");
+  if (guessInput) {
     guessInput.focus();
-    guessInput.select();
-  }, 450);
+  }
 }
 
 
@@ -671,6 +684,7 @@ function submitGuess() {
 
   if (isCorrectAnswer(guess)) {
 
+    solvedWithoutClues = guesses === 1;
     revealed = currentGame.words.length;
     renderWords();
     updateGuessCount();
@@ -757,7 +771,6 @@ function finish(won, quit = false) {
 
   finished = true;
   wonGame = won;
-  saveGameState();
 
   if (won && currentGame) {
     revealed = currentGame.words.length;
@@ -770,6 +783,8 @@ function finish(won, quit = false) {
     renderWords();
     updateGuessCount();
   }
+
+  saveGameState();
 
 
   const game = $("game");
@@ -880,12 +895,17 @@ async function shareResult() {
 
   const shareButton = $("shareBtn");
   const gameNumber = `#${String(currentGame.id).padStart(3, "0")}`;
+  const solvedOnFirstGuess = wonGame && solvedWithoutClues;
   const shareText = wonGame
-    ? `פתרתי את המילה האחרונה במשחק ${gameNumber} ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! תצליחו לנצח אותי?`
+    ? solvedOnFirstGuess
+      ? `פתרתי את המילה האחרונה במשחק ${gameNumber} בלי רמזים, בניחוש הראשון! תצליחו לנצח אותי?`
+      : `פתרתי את המילה האחרונה במשחק ${gameNumber} ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! תצליחו לנצח אותי?`
     : `ויתרתי על המילה האחרונה במשחק ${gameNumber}. תצליחו לפתור אותה?`;
   const resultTitle = wonGame ? "פתרתי!" : "ויתרתי...";
   const resultText = wonGame
-    ? "הצלחתי להגיע למילה האחרונה"
+    ? solvedOnFirstGuess
+      ? "פתרתי בלי רמזים"
+      : "הצלחתי להגיע למילה האחרונה"
     : "המילה האחרונה עדיין מחכה לכם";
 
   const canvas = document.createElement("canvas");
@@ -968,7 +988,7 @@ async function shareResult() {
 
   centeredText(wonGame ? "תוצאה" : "האתגר שלכם", canvas.width / 2, 665, 650, "700 38px 'Segoe UI', Arial", colors.dark);
 
-  centeredText(wonGame ? "פתרתי בלי ספוילרים" : "בלי ספוילרים, כמובן", canvas.width / 2, 725, 760, "500 28px 'Segoe UI', Arial", "#65717b");
+  centeredText(wonGame ? (solvedOnFirstGuess ? "בלי רמזים, בניחוש הראשון" : "בלי ספוילרים") : "בלי ספוילרים, כמובן", canvas.width / 2, 725, 760, "500 28px 'Segoe UI', Arial", "#65717b");
 
   ctx.fillStyle = colors.accent;
   ctx.font = "700 72px 'Segoe UI', Arial";
@@ -1203,6 +1223,26 @@ function showLoadError() {
 }
 
 
+function goToTodayGame() {
+  const todayGame = getDefaultGame();
+
+  if (!todayGame) {
+    showNoGames();
+    return;
+  }
+
+  if (currentGame?.id === todayGame.id) {
+    const result = $("result");
+    if (result) {
+      result.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return;
+  }
+
+  startGame(todayGame);
+}
+
+
 /* =========================================
    INITIALIZATION
 ========================================= */
@@ -1250,16 +1290,7 @@ function initialize() {
 
   if (againBtn) {
 
-    againBtn.addEventListener(
-      "click",
-      () => {
-
-        const selected =
-          getDefaultGame();
-
-        startGame(selected);
-      }
-    );
+    againBtn.addEventListener("click", goToTodayGame);
   }
 
 
@@ -1358,6 +1389,23 @@ function initialize() {
 
   const guess =
     $("guess");
+
+  const guessCard = $("guessCard");
+  if (guessCard) {
+    const activateGuessCard = () => {
+      if (guessCard.classList.contains("guess-card-collapsed")) {
+        revealGuessCard();
+      }
+    };
+
+    guessCard.addEventListener("click", activateGuessCard);
+    guessCard.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        activateGuessCard();
+      }
+    });
+  }
 
   const shareBtn = $("shareBtn");
 
