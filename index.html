@@ -48,46 +48,7 @@
       משחקים קודמים
     </button>
 
-    <button
-      id="instructionsBtn"
-      class="secondary"
-      type="button"
-    >
-      הוראות
-    </button>
-
   </header>
-
-  <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
-    <div class="instructions-header">
-      <h2 id="instructionsTitle">איך משחקים?</h2>
-      <button id="closeInstructionsBtn" class="dialog-close" type="button" aria-label="סגור הוראות">×</button>
-    </div>
-    <ol class="instructions-list">
-      <li>נחשו מהי המילה האחרונה ברצף.</li>
-      <li>ניחוש שגוי חושף מילה נוספת.</li>
-      <li>לחצו על הרמז שמעל המילים כדי לראות את כיוון הרצף: ישר, הפוך או ללא כיוון.</li>
-      <li>נסו למצוא את המילה האחרונה בכמה שפחות ניחושים.</li>
-      <li>אפשר לראות פתרונות של משחקים קודמים בארכיון כשלוחצים על וותר</li>
-    </ol>
-    <button id="instructionsDoneBtn" class="primary" type="button">הבנתי</button>
-  </dialog>
-
-  <dialog id="updatesDialog" class="instructions-dialog" aria-labelledby="updatesTitle">
-    <div class="instructions-header">
-      <h2 id="updatesTitle">עדכונים</h2>
-      <button id="closeUpdatesBtn" class="dialog-close" type="button" aria-label="סגור עדכונים">×</button>
-    </div>
-    <div class="updates-body">
-      <p>הוספנו כמה שיפורים חדשים:</p>
-      <ul class="instructions-list updates-list">
-        <li>כפתור רמז (לחלשי אופי) מעל המילים מציג את כיוון הרמז.</li>
-        <li>הכפתור מתחיל ב־? ואז מגלה: ישר, הפוך או ללא כיוון.</li>
-        <li>שדרגנו את כפתור השיתוף</li>
-      </ul>
-    </div>
-    <button id="updatesDoneBtn" class="primary" type="button">סגור</button>
-  </dialog>
 
 
   <!-- PREVIOUS GAMES -->
@@ -193,17 +154,6 @@
 
 
     <section class="card words-card">
-
-      <div class="clue-toggle-wrap">
-        <button
-          id="clueToggle"
-          class="clue-toggle"
-          type="button"
-          aria-label="הצג כיוון רמז"
-        >
-          <span id="clueValue">?</span>
-        </button>
-      </div>
 
       <div
         id="words"
@@ -334,7 +284,7 @@
   </div>
 
 
-  <footer>משחק חדש מתפרסם כל יומיים!!!</footer>
+  <footer>משחק חדש מתפרסם כל יום שני וחמישי</footer>
 
   <section class="suggestion card">
     <div class="eyebrow">יש לך רעיון?</div>
@@ -371,7 +321,7 @@
 </main>
 
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=11"></script>
 
 </body>
 
