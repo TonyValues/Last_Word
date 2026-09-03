@@ -64,7 +64,7 @@ h1{font-size:34px;letter-spacing:0;margin:0}h2{font-size:25px;margin:8px 0 10px}
 .quit-button:hover{background:#f5f8f9;color:var(--text)}
 .answer-box span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.answer-box strong{font-size:24px}
 .answer-explanation{margin:10px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
-footer{text-align:center;color:#9aa0a9;font-size:12px;margin-top:24px}
+footer{text-align:center;color:#9aa0a9;font-size:16px;font-weight:700;margin-top:24px}
 .suggestion{margin-top:12px;padding:13px 15px}.suggestion .eyebrow{margin-bottom:2px;font-size:10px}.suggestion h2{display:inline;margin:0 8px 0 0;font-size:17px}.suggestion p{display:inline;color:var(--muted);margin:0;font-size:12px}.suggestion-form{display:grid;grid-template-columns:1.4fr 1fr 1.4fr 1fr auto;align-items:end;gap:7px;margin-top:10px}.suggestion-form label{display:grid;gap:3px;min-width:0}.suggestion-form label span{font-size:11px;font-weight:700;color:var(--muted)}.suggestion-form input{min-width:0;border:1px solid #cfd3d9;border-radius:8px;padding:7px 9px;font-size:13px;background:#fff}.suggestion-form input:focus{border-color:var(--primary);box-shadow:0 0 0 3px #0d59601c}.suggestion-form button{justify-self:stretch;padding:7px 12px;font-size:13px}
 .hidden{display:none!important}
 .suggestion-response{display:none}

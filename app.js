@@ -491,6 +491,8 @@ function startGame(selectedGame) {
   const guessCard = $("guessCard");
   if (guessCard) {
     guessCard.classList.remove("guess-card-collapsed");
+    guessCard.classList.remove("hidden");
+    guessCard.setAttribute("aria-expanded", "true");
   }
 
   if (finished) {
@@ -602,6 +604,16 @@ function hideGuessCardBriefly() {
 
   guessCard.classList.add("guess-card-collapsed");
   guessCard.setAttribute("aria-expanded", "false");
+}
+
+
+function scrollToNewlyRevealedWord() {
+  const wordsEl = $("words");
+  const newWord = wordsEl?.children[revealed - 1];
+
+  if (newWord) {
+    newWord.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 
@@ -721,6 +733,7 @@ function submitGuess() {
     renderWords();
     updateGuessCount();
     hideGuessCardBriefly();
+    scrollToNewlyRevealedWord();
 
     if (window.innerWidth <= 760) {
       window.setTimeout(() => {
@@ -749,6 +762,7 @@ function submitGuess() {
 
     updateGuessCount();
     hideGuessCardBriefly();
+    scrollToNewlyRevealedWord();
 
     if (window.innerWidth <= 760 && feedback) {
       window.setTimeout(() => {
@@ -789,9 +803,16 @@ function finish(won, quit = false) {
 
   const game = $("game");
   const result = $("result");
+  const guessCard = $("guessCard");
+
+  if (guessCard) {
+    guessCard.classList.add("hidden");
+    guessCard.classList.remove("guess-card-collapsed");
+    guessCard.setAttribute("aria-expanded", "false");
+  }
 
 
-  if (game && !won) {
+  if (game && !won && !quit) {
     game.classList.add("hidden");
   }
 
