@@ -586,6 +586,28 @@ function updateGuessCount() {
 }
 
 
+function hideGuessCardBriefly() {
+  const guessCard = $("guessCard");
+  const guessInput = $("guess");
+
+  if (!guessCard || !guessInput) {
+    return;
+  }
+
+  guessCard.classList.add("hidden");
+
+  window.setTimeout(() => {
+    if (finished) {
+      return;
+    }
+
+    guessCard.classList.remove("hidden");
+    guessInput.focus();
+    guessInput.select();
+  }, 450);
+}
+
+
 /* =========================================
    CHECK ANSWER
 ========================================= */
@@ -684,6 +706,7 @@ function submitGuess() {
 
     renderWords();
     updateGuessCount();
+    hideGuessCardBriefly();
 
     if (window.innerWidth <= 760) {
       window.setTimeout(() => {
@@ -700,8 +723,6 @@ function submitGuess() {
       }, 0);
     }
 
-    guessEl.select();
-
   } else {
     const feedback = $("feedback");
 
@@ -713,6 +734,7 @@ function submitGuess() {
     }
 
     updateGuessCount();
+    hideGuessCardBriefly();
 
     if (window.innerWidth <= 760 && feedback) {
       window.setTimeout(() => {
@@ -723,7 +745,6 @@ function submitGuess() {
       }, 0);
     }
 
-    guessEl.select();
   }
 }
 
@@ -858,17 +879,18 @@ async function shareResult() {
   if (!currentGame) return;
 
   const shareButton = $("shareBtn");
+  const gameNumber = `#${String(currentGame.id).padStart(3, "0")}`;
   const shareText = wonGame
-    ? `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! 🎯🔥 תנסו לנצח אותי 😎`
-    : "ויתרתי על המשחק של המילה האחרונה. תצליחו לפתור אותו? 🤔";
-  const resultTitle = wonGame ? "הצלחתי!" : "ויתרתי...";
+    ? `פתרתי את המילה האחרונה במשחק ${gameNumber} ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! תצליחו לנצח אותי?`
+    : `ויתרתי על המילה האחרונה במשחק ${gameNumber}. תצליחו לפתור אותה?`;
+  const resultTitle = wonGame ? "פתרתי!" : "ויתרתי...";
   const resultText = wonGame
-    ? `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}!`
-    : "ויתרתי, תצליחו לפתור אותו?";
+    ? "הצלחתי להגיע למילה האחרונה"
+    : "המילה האחרונה עדיין מחכה לכם";
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
-  canvas.height = 1200;
+  canvas.height = 1350;
   const ctx = canvas.getContext("2d");
 
   if (!ctx) {
@@ -876,68 +898,90 @@ async function shareResult() {
     return;
   }
 
+  const colors = wonGame
+    ? { accent: "#148c58", accentSoft: "#e5f6ed", dark: "#12333a" }
+    : { accent: "#c46a24", accentSoft: "#fff0e3", dark: "#3d2b22" };
+
+  const roundRect = (x, y, width, height, radius) => {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+  };
+
+  const centeredText = (text, x, y, maxWidth, font, color) => {
+    ctx.font = font;
+    let fittedFont = Number(font.match(/(\d+)px/)?.[1] || 32);
+    const fontWeight = font.split(" ")[0];
+    while (ctx.measureText(text).width > maxWidth && fittedFont > 20) {
+      fittedFont -= 2;
+      ctx.font = `${fontWeight} ${fittedFont}px 'Segoe UI', Arial`;
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  };
+
   ctx.fillStyle = "#eef2f5";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, "#dfeef0");
-  gradient.addColorStop(1, "#f7fafc");
+  gradient.addColorStop(0, colors.accentSoft);
+  gradient.addColorStop(0.52, "#f8fafb");
+  gradient.addColorStop(1, "#e9eef1");
   ctx.fillStyle = gradient;
-  ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
+  roundRect(42, 42, canvas.width - 84, canvas.height - 84, 34);
+  ctx.fill();
 
-  ctx.fillStyle = "#0d5960";
-  ctx.font = "700 52px 'Segoe UI', Arial";
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = colors.accent;
+  ctx.beginPath();
+  ctx.arc(120, 120, 150, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(970, 1210, 220, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
   ctx.textAlign = "center";
-  ctx.fillText("המילה האחרונה", canvas.width / 2, 160);
+  centeredText("המילה האחרונה", canvas.width / 2, 150, 760, "700 52px 'Segoe UI', Arial", colors.dark);
 
-  ctx.fillStyle = "#17212b";
-  ctx.font = "700 72px 'Segoe UI', Arial";
-  ctx.fillText(resultTitle, canvas.width / 2, 260);
+  centeredText(resultTitle, canvas.width / 2, 275, 800, "700 88px 'Segoe UI', Arial", colors.accent);
 
-  ctx.fillStyle = "#65717b";
-  ctx.font = "500 32px 'Segoe UI', Arial";
-  ctx.fillText(resultText, canvas.width / 2, 330);
+  centeredText(resultText, canvas.width / 2, 340, 820, "500 32px 'Segoe UI', Arial", "#65717b");
 
-  ctx.fillStyle = "#ffffff";
-  ctx.strokeStyle = "#dce3e8";
-  ctx.lineWidth = 2;
   const cardX = 120;
-  const cardY = 430;
+  const cardY = 455;
   const cardW = canvas.width - 240;
-  const cardH = 420;
-  ctx.fillRect(cardX, cardY, cardW, cardH);
-  ctx.strokeRect(cardX, cardY, cardW, cardH);
+  const cardH = 505;
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "#17303d25";
+  ctx.shadowBlur = 28;
+  ctx.shadowOffsetY = 12;
+  roundRect(cardX, cardY, cardW, cardH, 26);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
-  ctx.fillStyle = "#0d5960";
-  ctx.font = "700 34px 'Segoe UI', Arial";
-  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 510);
+  ctx.fillStyle = colors.accentSoft;
+  roundRect(350, 505, 380, 62, 31);
+  ctx.fill();
+  centeredText(`משחק ${gameNumber}`, canvas.width / 2, 547, 320, "700 30px 'Segoe UI', Arial", colors.accent);
 
-  ctx.fillStyle = "#17212b";
-  ctx.font = "700 32px 'Segoe UI', Arial";
-  ctx.fillText("הרמזים", canvas.width / 2, 565);
+  centeredText(wonGame ? "תוצאה" : "האתגר שלכם", canvas.width / 2, 665, 650, "700 38px 'Segoe UI', Arial", colors.dark);
 
-  const visibleWords = currentGame.words.map((word, index) =>
-    index < revealed ? word : "•••"
-  );
-  ctx.font = "700 28px 'Segoe UI', Arial";
-  visibleWords.forEach((word, index) => {
-    ctx.fillText(word, canvas.width / 2, 610 + index * 42);
-  });
+  centeredText(wonGame ? "פתרתי בלי ספוילרים" : "בלי ספוילרים, כמובן", canvas.width / 2, 725, 760, "500 28px 'Segoe UI', Arial", "#65717b");
 
-  const shareAnswer = wonGame || !isLatestPublishedGame(currentGame)
-    ? getAnswers(currentGame)[0] || ""
-    : "???";
-  ctx.fillStyle = "#9a6b00";
-  ctx.font = "700 32px 'Segoe UI', Arial";
-  ctx.fillText(shareAnswer, canvas.width / 2, 820);
+  ctx.fillStyle = colors.accent;
+  ctx.font = "700 72px 'Segoe UI', Arial";
+  ctx.fillText(String(guesses), canvas.width / 2, 845);
 
-  ctx.fillStyle = "#0d5960";
-  ctx.font = "700 28px 'Segoe UI', Arial";
-  ctx.fillText(wonGame ? "ניצחון" : "ויתור", canvas.width / 2, 1030);
+  centeredText(guesses === 1 ? "ניחוש אחד" : `${guesses} ניחושים`, canvas.width / 2, 895, 600, "700 30px 'Segoe UI', Arial", colors.dark);
 
-  ctx.fillStyle = "#17212b";
-  ctx.font = "700 30px 'Segoe UI', Arial";
-  ctx.fillText(`${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`, canvas.width / 2, 1085);
+  ctx.fillStyle = colors.accent;
+  roundRect(250, 1000, 580, 4, 2);
+  ctx.fill();
+
+  centeredText(wonGame ? "תנסו לשבור את השיא" : "תצליחו לפתור את המשחק?", canvas.width / 2, 1085, 800, "700 34px 'Segoe UI', Arial", colors.accent);
+  centeredText("שתפו את האתגר", canvas.width / 2, 1150, 700, "500 28px 'Segoe UI', Arial", "#65717b");
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
 
