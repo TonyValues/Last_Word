@@ -4,7 +4,10 @@ let GAME_STATISTICS = [];
 let revealed = 1;
 let guesses = 0;
 let finished = false;
+let wonGame = false;
+let clueOpen = false;
 const STATS_KEY = "the-last-word-stats";
+const UPDATES_KEY = "the-last-word-updates-hidden";
 
 
 /* =========================================
@@ -75,7 +78,9 @@ function parseGamesCsv(csvText) {
         author: game.author || "צוות המילה האחרונה",
         words: String(game.words).split("|").map(word => word.trim()).filter(Boolean),
         answers: String(game.answers).split("|").map(answer => answer.trim()).filter(Boolean),
-        explanation: game.explanation
+        explanation: game.explanation,
+        direction: game.direction || game.clueDirection || game.arrow || game.hintDirection || game.hint || "",
+        arrow: game.arrow || game.hintDirection || game.direction || game.clueDirection || game.hint || ""
       };
     })
     .filter(Boolean);
@@ -195,6 +200,88 @@ function renderLatestGameStatistics(game) {
     averageEl.textContent = formatGuessCount(statistics.average);
     medianEl.textContent = formatGuessCount(statistics.median);
   }
+}
+
+
+function getDirectionInfo(game) {
+  if (!game) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
+  }
+
+  const rawValue = String(
+    game.direction ??
+    game.clueDirection ??
+    game.arrow ??
+    game.hintDirection ??
+    game.hint ??
+    ""
+  ).trim();
+
+  const normalized = normalize(rawValue);
+
+  if (!rawValue) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
+  }
+
+  if (["straight", "ישר", "forward", "forwards", "direct", "down", "downward", "vertical"].includes(normalized)) {
+    return { key: "straight", symbol: "↓", label: "ישר", color: "#1f9d5a" };
+  }
+
+  if (["reversed", "reverse", "הפוך", "backward", "backwards", "up", "upward"].includes(normalized)) {
+    return { key: "reversed", symbol: "↑", label: "הפוך", color: "#e8681b" };
+  }
+
+  if (["none", "no direction", "לא ידוע", "ללא כיוון", "nodirection", "equal", "equals", "same", "flat"].includes(normalized)) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
+  }
+
+  if (normalized.includes("down") || normalized.includes("straight")) {
+    return { key: "straight", symbol: "↓", label: "ישר", color: "#1f9d5a" };
+  }
+
+  if (normalized.includes("reverse") || normalized.includes("reversed") || normalized.includes("up")) {
+    return { key: "reversed", symbol: "↑", label: "הפוך", color: "#e8681b" };
+  }
+
+  if (normalized.includes("equal") || normalized.includes("none") || normalized.includes("no")) {
+    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
+  }
+
+  return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
+}
+
+
+function renderClueButton() {
+  const clueToggle = $("clueToggle");
+  const clueValue = $("clueValue");
+
+  if (!clueToggle || !clueValue || !currentGame) {
+    return;
+  }
+
+  const directionInfo = getDirectionInfo(currentGame);
+
+  clueToggle.classList.toggle("is-open", clueOpen);
+  clueToggle.style.background = clueOpen ? directionInfo.color : "#e2f1f0";
+  clueToggle.style.borderColor = clueOpen ? directionInfo.color : "#0d5960";
+  clueToggle.style.color = clueOpen ? "#ffffff" : "#0d5960";
+  clueValue.textContent = clueOpen ? directionInfo.symbol : "?";
+  clueToggle.setAttribute(
+    "aria-label",
+    clueOpen
+      ? `כיוון הרמז: ${directionInfo.label}`
+      : "הצג כיוון רמז"
+  );
+}
+
+
+function toggleClue() {
+  if (!currentGame) {
+    return;
+  }
+
+  clueOpen = !clueOpen;
+  renderClueButton();
 }
 
 
@@ -424,6 +511,8 @@ function startGame(selectedGame) {
   revealed = 1;
   guesses = 0;
   finished = false;
+  wonGame = false;
+  clueOpen = false;
 
 
   const intro = $("intro");
@@ -501,6 +590,7 @@ function startGame(selectedGame) {
 
   renderWords();
   updateStats();
+  renderClueButton();
 
 
   if (game) {
@@ -535,14 +625,6 @@ function renderWords() {
 
     div.className = "word";
 
-    if (
-      index ===
-      currentGame.words.length - 1
-    ) {
-      div.classList.add("target");
-    }
-
-
     if (index < revealed) {
 
       div.textContent = word;
@@ -556,6 +638,15 @@ function renderWords() {
 
     wordsEl.appendChild(div);
   });
+
+  const answerDiv = document.createElement("div");
+  answerDiv.className = "word target-answer";
+  const revealAnswer = wonGame || (finished && !isLatestPublishedGame(currentGame));
+  answerDiv.textContent = revealAnswer ? getAnswers(currentGame)[0] || "" : "???";
+  if (!revealAnswer) {
+    answerDiv.classList.add("hidden-word");
+  }
+  wordsEl.appendChild(answerDiv);
 
 
   const revealedCount =
@@ -685,11 +776,17 @@ function submitGuess() {
     renderWords();
     updateStats();
 
-    if (window.innerWidth <= 760 && feedback) {
+    if (window.innerWidth <= 760) {
       window.setTimeout(() => {
-        feedback.scrollIntoView({
+        const game = $("game");
+
+        if (!game) {
+          return;
+        }
+
+        game.scrollIntoView({
           behavior: "smooth",
-          block: "center"
+          block: "start"
         });
       }, 0);
     }
@@ -729,6 +826,7 @@ function submitGuess() {
 function finish(won, quit = false) {
 
   finished = true;
+  wonGame = won;
 
   if (won && currentGame) {
     revealed = currentGame.words.length;
@@ -747,14 +845,14 @@ function finish(won, quit = false) {
   const result = $("result");
 
 
-  if (game && !won && !quit) {
+  if (game && !won) {
     game.classList.add("hidden");
   }
 
   if (result) {
     result.classList.remove("hidden");
 
-    if (won) {
+    if (won || quit) {
       window.setTimeout(() => {
         window.scrollTo({
           top: Math.max(0, result.offsetTop - 12),
@@ -839,21 +937,138 @@ function finish(won, quit = false) {
 }
 
 
-function shareResult() {
+async function shareResult() {
   if (!currentGame) return;
 
-  const shareText = `המילה האחרונה #${String(currentGame.id).padStart(3, "0")} | ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`;
   const shareButton = $("shareBtn");
+  const shareText = wonGame
+    ? `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}! 🎯🔥 תנסו לנצח אותי 😎`
+    : "ויתרתי על המשחק של המילה האחרונה. תצליחו לפתור אותו? 🤔";
+  const resultTitle = wonGame ? "הצלחתי!" : "ויתרתי...";
+  const resultText = wonGame
+    ? `ניחשתי את המילה האחרונה ב-${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}!`
+    : "ויתרתי, תצליחו לפתור אותו?";
 
-  if (navigator.share) {
-    navigator.share({ title: "המילה האחרונה", text: shareText }).catch(() => {});
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1200;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    fallbackTextShare(shareText, shareButton);
     return;
   }
 
+  ctx.fillStyle = "#eef2f5";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#dfeef0");
+  gradient.addColorStop(1, "#f7fafc");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 52px 'Segoe UI', Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("המילה האחרונה", canvas.width / 2, 160);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "700 72px 'Segoe UI', Arial";
+  ctx.fillText(resultTitle, canvas.width / 2, 260);
+
+  ctx.fillStyle = "#65717b";
+  ctx.font = "500 32px 'Segoe UI', Arial";
+  ctx.fillText(resultText, canvas.width / 2, 330);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#dce3e8";
+  ctx.lineWidth = 2;
+  const cardX = 120;
+  const cardY = 430;
+  const cardW = canvas.width - 240;
+  const cardH = 420;
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+  ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 34px 'Segoe UI', Arial";
+  ctx.fillText("אתגר", canvas.width / 2, 510);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "700 52px 'Segoe UI', Arial";
+  ctx.fillText("תנסה לנצח אותי! 😎", canvas.width / 2, 610);
+
+  ctx.fillStyle = "#1f9d5a";
+  ctx.font = "700 32px 'Segoe UI', Arial";
+  ctx.fillText("🎯🔥🏆", canvas.width / 2, 700);
+
+  ctx.fillStyle = "#0d5960";
+  ctx.font = "700 28px 'Segoe UI', Arial";
+  ctx.fillText(`משחק #${String(currentGame.id).padStart(3, "0")}`, canvas.width / 2, 1030);
+
+  ctx.fillStyle = "#17212b";
+  ctx.font = "700 30px 'Segoe UI', Arial";
+  ctx.fillText(`${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}`, canvas.width / 2, 1085);
+
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+
+  if (!blob) {
+    fallbackTextShare(shareText, shareButton);
+    return;
+  }
+
+  const file = new File([blob], "last-word-result.png", { type: "image/png" });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: "המילה האחרונה",
+        text: shareText,
+        files: [file]
+      });
+      return;
+    } catch (error) {
+      // fall through to download/share URL fallback
+    }
+  }
+
+  const downloadLink = document.createElement("a");
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = "last-word-result.png";
+  downloadLink.click();
+
+  const whatsappText = encodeURIComponent(`${shareText}\n${window.location.href}`);
+  const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+  if (shareButton) {
+    shareButton.textContent = "התוצאה נשלחה";
+    window.setTimeout(() => {
+      shareButton.textContent = "שתף תוצאה";
+    }, 1800);
+  }
+}
+
+function fallbackTextShare(shareText, shareButton) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(shareText).then(() => {
       if (shareButton) shareButton.textContent = "התוצאה הועתקה";
+      window.setTimeout(() => {
+        if (shareButton) shareButton.textContent = "שתף תוצאה";
+      }, 1800);
     }).catch(() => {});
+    return;
+  }
+
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+  if (shareButton) {
+    shareButton.textContent = "פתח WhatsApp";
+    window.setTimeout(() => {
+      if (shareButton) shareButton.textContent = "שתף תוצאה";
+    }, 1800);
   }
 }
 
@@ -1026,6 +1241,7 @@ function initialize() {
   renderGameList();
   renderStats();
   renderLatestGameStatistics(defaultGame);
+  renderClueButton();
 
 
   /* -----------------------------------------
@@ -1077,6 +1293,75 @@ function initialize() {
       "click",
       toggleGameSelector
     );
+  }
+
+
+  const instructionsDialog = $("instructionsDialog");
+  const instructionsBtn = $("instructionsBtn");
+  const closeInstructionsBtn = $("closeInstructionsBtn");
+  const instructionsDoneBtn = $("instructionsDoneBtn");
+
+  if (instructionsDialog && instructionsBtn) {
+    instructionsBtn.addEventListener("click", () => instructionsDialog.showModal());
+
+    [closeInstructionsBtn, instructionsDoneBtn].forEach(button => {
+      if (button) {
+        button.addEventListener("click", () => instructionsDialog.close());
+      }
+    });
+
+    instructionsDialog.addEventListener("click", event => {
+      if (event.target === instructionsDialog) {
+        instructionsDialog.close();
+      }
+    });
+  }
+
+
+  const updatesDialog = $("updatesDialog");
+  const closeUpdatesBtn = $("closeUpdatesBtn");
+  const updatesDoneBtn = $("updatesDoneBtn");
+
+  function dismissUpdatesDialog() {
+    if (updatesDialog) {
+      updatesDialog.close();
+    }
+
+    try {
+      sessionStorage.setItem(UPDATES_KEY, "1");
+    } catch (error) {
+      // Private browsing can disable session storage; the popup may reappear, but the app still works.
+    }
+  }
+
+  if (updatesDialog) {
+    try {
+      const hidden = sessionStorage.getItem(UPDATES_KEY) === "1";
+      if (!hidden) {
+        updatesDialog.showModal();
+      }
+    } catch (error) {
+      updatesDialog.showModal();
+    }
+
+    [closeUpdatesBtn, updatesDoneBtn].forEach(button => {
+      if (button) {
+        button.addEventListener("click", dismissUpdatesDialog);
+      }
+    });
+
+    updatesDialog.addEventListener("click", event => {
+      if (event.target === updatesDialog) {
+        dismissUpdatesDialog();
+      }
+    });
+  }
+
+
+  const clueToggle = $("clueToggle");
+
+  if (clueToggle) {
+    clueToggle.addEventListener("click", toggleClue);
   }
 
 
