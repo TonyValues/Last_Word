@@ -620,9 +620,36 @@ function scrollToNewlyRevealedWord() {
   const wordsEl = $("words");
   const newWord = wordsEl?.children[revealed - 1];
 
-  if (newWord && window.innerWidth > 860) {
-    newWord.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (!newWord) {
+    return;
   }
+
+  if (window.innerWidth > 860) {
+    newWord.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  window.setTimeout(() => {
+    const viewport = window.visualViewport;
+    const viewportTop = viewport?.offsetTop || 0;
+    const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
+    const guessCard = $("guessCard");
+    const guessCardTop = guessCard?.getBoundingClientRect().top || viewportBottom;
+    const visibleBottom = Math.min(viewportBottom - 12, guessCardTop - 12);
+    const wordRect = newWord.getBoundingClientRect();
+
+    if (wordRect.bottom > visibleBottom) {
+      window.scrollBy({
+        top: wordRect.bottom - visibleBottom,
+        behavior: "smooth"
+      });
+    } else if (wordRect.top < viewportTop + 72) {
+      window.scrollBy({
+        top: wordRect.top - (viewportTop + 72),
+        behavior: "smooth"
+      });
+    }
+  }, 120);
 }
 
 
@@ -642,11 +669,13 @@ function syncGuessDockToKeyboard() {
   const viewport = window.visualViewport;
   if (!viewport) {
     document.documentElement.style.setProperty("--guess-dock-offset", "0px");
+    document.documentElement.classList.remove("keyboard-open");
     return;
   }
 
   const keyboardOffset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
   document.documentElement.style.setProperty("--guess-dock-offset", `${keyboardOffset}px`);
+  document.documentElement.classList.toggle("keyboard-open", keyboardOffset > 120);
 }
 
 
@@ -749,8 +778,8 @@ function submitGuess() {
 
     renderWords();
     updateGuessCount();
-    scrollToNewlyRevealedWord();
     prepareNextGuess();
+    scrollToNewlyRevealedWord();
 
   } else {
     const feedback = $("feedback");

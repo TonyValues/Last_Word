@@ -33,7 +33,6 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .topbar-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px}
 h1{font-size:36px;letter-spacing:-.5px;margin:0;color:var(--primary-dark)}
-.brand-caption{margin:4px 0 0;color:var(--muted);font-size:13px}
 h2{font-size:25px;margin:8px 0 10px}
 .card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 48px #17303d12}
 .intro-card{text-align:center;padding:52px 28px}
@@ -55,7 +54,7 @@ h2{font-size:25px;margin:8px 0 10px}
 .updates-list{margin-top:14px}
 .game-selector{padding:18px;margin:0 auto 14px;max-width:560px}
 .game-selector h2{margin-top:0}
-.game-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:16px;max-height:260px;overflow:auto}
+.game-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:16px;max-height:160px;overflow-y:auto;overscroll-behavior:contain}
 .game-list{scrollbar-width:thin;scrollbar-color:#a9c4c3 transparent}
 .game-list::-webkit-scrollbar{width:4px;height:4px}
 .game-list::-webkit-scrollbar-track{background:transparent}
@@ -77,9 +76,7 @@ h2{font-size:25px;margin:8px 0 10px}
 .game-layout #game{min-width:0}
 .words-card{padding:20px 18px 18px}
 .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
-.section-heading .eyebrow{margin:0}
 .section-heading h2{font-size:20px;margin:0;color:var(--text)}
-.sequence-count{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--primary-soft);color:var(--primary);font-size:12px;font-weight:800}
 .clue-toggle-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:2px 0 16px}
 .clue-toggle{width:56px;height:56px;border:2px solid var(--primary);border-radius:50%;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font-size:30px;font-weight:800;cursor:pointer;transition:transform .15s,background .15s,color .15s,border-color .15s,box-shadow .15s}
 .clue-toggle:hover{transform:translateY(-1px)}
@@ -165,7 +162,6 @@ code{font-family:monospace}
   }
   .brand{width:100%}
   h1{font-size:27px}
-  .brand-caption{font-size:12px}
   .topbar-actions{width:100%}
   .topbar-actions .secondary{flex:1;font-size:14px}
   .intro-card{padding:32px 18px}
@@ -199,6 +195,24 @@ code{font-family:monospace}
   .guess-card .quit-button{margin-top:4px;min-height:34px;padding:3px 8px}
   .game.is-guessing{
     padding-bottom:calc(240px + var(--safe-bottom) + var(--guess-dock-offset));
+  }
+  .keyboard-open .guess-card{
+    padding:8px 10px 6px;
+    border-radius:14px;
+  }
+  .keyboard-open .guess-card-head{margin-bottom:6px}
+  .keyboard-open .input-kicker{display:none}
+  .keyboard-open .guess-row{flex-direction:row;gap:7px}
+  .keyboard-open .guess-row input,
+  .keyboard-open .guess-row .primary{min-height:42px}
+  .keyboard-open .guess-row .primary{width:auto;min-width:82px}
+  .keyboard-open .feedback{min-height:16px;padding-top:4px;font-size:12px}
+  .keyboard-open .guess-card .quit-button{min-height:26px;margin-top:2px;padding:1px 8px}
+  .keyboard-open .game.is-guessing{
+    padding-bottom:calc(170px + var(--safe-bottom) + var(--guess-dock-offset));
+  }
+  .app:has(.game.is-guessing) .suggestion{
+    margin-bottom:calc(190px + var(--safe-bottom) + var(--guess-dock-offset));
   }
   footer{margin-top:16px}
 }
