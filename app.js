@@ -8,6 +8,7 @@ let solvedWithoutClues = false;
 let clueOpen = false;
 const GAME_STATE_KEY = "the-last-word-current-game";
 const UPDATES_KEY = "the-last-word-updates-hidden";
+let uiInitialized = false;
 
 
 /* =========================================
@@ -230,6 +231,11 @@ function renderClueButton() {
       ? `כיוון הרמז: ${directionInfo.label}`
       : "הצג כיוון רמז"
   );
+
+  const clueLabel = $("clueLabel");
+  if (clueLabel) {
+    clueLabel.textContent = clueOpen ? directionInfo.label : "רמז לכיוון";
+  }
 }
 
 
@@ -426,6 +432,11 @@ function startGame(selectedGame, restart = false) {
     result.classList.add("hidden");
   }
 
+  const gameLayout = document.querySelector(".game-layout");
+  if (gameLayout) {
+    gameLayout.classList.remove("has-result");
+  }
+
   if (selector) {
     selector.classList.add("hidden");
   }
@@ -490,9 +501,12 @@ function startGame(selectedGame, restart = false) {
   renderClueButton();
   const guessCard = $("guessCard");
   if (guessCard) {
-    guessCard.classList.remove("guess-card-collapsed");
     guessCard.classList.remove("hidden");
     guessCard.setAttribute("aria-expanded", "true");
+  }
+
+  if (game) {
+    game.classList.toggle("is-guessing", !finished);
   }
 
   if (finished) {
@@ -503,7 +517,7 @@ function startGame(selectedGame, restart = false) {
   saveGameState();
 
 
-  if (game) {
+  if (game && window.innerWidth > 860) {
     window.setTimeout(() => {
       game.scrollIntoView({
         behavior: "smooth",
@@ -532,23 +546,26 @@ function renderWords() {
   currentGame.words.forEach((word, index) => {
 
     const div = document.createElement("div");
-
     div.className = "word";
 
+    const indexBadge = document.createElement("span");
+    indexBadge.className = "word-index";
+    indexBadge.textContent = String(index + 1);
+    div.appendChild(indexBadge);
+
+    const wordText = document.createElement("span");
+
     if (index < revealed) {
-
-      div.textContent = word;
-      if (index === revealed - 1) {
-        div.classList.add("word-revealed");
+      wordText.textContent = word;
+      if (index === revealed - 1 && !finished) {
+        div.classList.add("word-revealed", "just-revealed");
       }
-
     } else {
-
-      div.textContent = "•••";
+      wordText.textContent = "•••";
       div.classList.add("hidden-word");
     }
 
-
+    div.appendChild(wordText);
     wordsEl.appendChild(div);
   });
 
@@ -564,19 +581,18 @@ function renderWords() {
   }
   wordsEl.appendChild(answerDiv);
 
-
-  const revealedCount =
-    $("revealedCount");
+  const totalItems = currentGame.words.length + 1;
+  const revealedItems = finished ? totalItems : revealed;
+  const revealedCount = $("revealedCount");
 
   if (revealedCount) {
-
-    const totalItems = currentGame.words.length + 1;
-    const revealedItems = finished
-      ? totalItems
-      : revealed;
-
     revealedCount.textContent =
       `${revealedItems} / ${totalItems} מילים נחשפו`;
+  }
+
+  const progressFill = $("progressFill");
+  if (progressFill) {
+    progressFill.style.width = `${Math.round((revealedItems / totalItems) * 100)}%`;
   }
 }
 
@@ -592,18 +608,11 @@ function updateGuessCount() {
   if (guessesEl) {
     guessesEl.textContent = guesses;
   }
-}
 
-
-function hideGuessCardBriefly() {
-  const guessCard = $("guessCard");
-
-  if (!guessCard) {
-    return;
+  const guessesLabel = $("guessesLabel");
+  if (guessesLabel) {
+    guessesLabel.textContent = guesses === 1 ? "ניחוש" : "ניחושים";
   }
-
-  guessCard.classList.add("guess-card-collapsed");
-  guessCard.setAttribute("aria-expanded", "false");
 }
 
 
@@ -611,25 +620,33 @@ function scrollToNewlyRevealedWord() {
   const wordsEl = $("words");
   const newWord = wordsEl?.children[revealed - 1];
 
-  if (newWord) {
+  if (newWord && window.innerWidth > 860) {
     newWord.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
 
 
-function revealGuessCard() {
-  const guessCard = $("guessCard");
+function prepareNextGuess() {
   const guessInput = $("guess");
 
-  if (!guessCard || finished) {
+  if (!guessInput || finished) {
     return;
   }
 
-  guessCard.classList.remove("guess-card-collapsed");
-  guessCard.setAttribute("aria-expanded", "true");
-  if (guessInput) {
-    guessInput.focus();
+  guessInput.value = "";
+  guessInput.focus({ preventScroll: true });
+}
+
+
+function syncGuessDockToKeyboard() {
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    document.documentElement.style.setProperty("--guess-dock-offset", "0px");
+    return;
   }
+
+  const keyboardOffset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+  document.documentElement.style.setProperty("--guess-dock-offset", `${keyboardOffset}px`);
 }
 
 
@@ -732,23 +749,8 @@ function submitGuess() {
 
     renderWords();
     updateGuessCount();
-    hideGuessCardBriefly();
     scrollToNewlyRevealedWord();
-
-    if (window.innerWidth <= 760) {
-      window.setTimeout(() => {
-        const game = $("game");
-
-        if (!game) {
-          return;
-        }
-
-        game.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-      }, 0);
-    }
+    prepareNextGuess();
 
   } else {
     const feedback = $("feedback");
@@ -761,18 +763,8 @@ function submitGuess() {
     }
 
     updateGuessCount();
-    hideGuessCardBriefly();
     scrollToNewlyRevealedWord();
-
-    if (window.innerWidth <= 760 && feedback) {
-      window.setTimeout(() => {
-        feedback.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 0);
-    }
-
+    prepareNextGuess();
   }
 }
 
@@ -807,13 +799,20 @@ function finish(won, quit = false) {
 
   if (guessCard) {
     guessCard.classList.add("hidden");
-    guessCard.classList.remove("guess-card-collapsed");
     guessCard.setAttribute("aria-expanded", "false");
   }
 
+  const gameLayout = document.querySelector(".game-layout");
+  if (gameLayout) {
+    gameLayout.classList.add("has-result");
+  }
 
-  if (game && !won && !quit) {
-    game.classList.add("hidden");
+
+  if (game) {
+    game.classList.remove("is-guessing");
+    if (!won && !quit) {
+      game.classList.add("hidden");
+    }
   }
 
   if (result) {
@@ -1269,6 +1268,9 @@ function initialize() {
   }
   if (startBtn) startBtn.classList.remove("hidden");
 
+  if (!uiInitialized) {
+    uiInitialized = true;
+
   if (startBtn) {
 
     startBtn.addEventListener(
@@ -1393,23 +1395,6 @@ function initialize() {
   const guess =
     $("guess");
 
-  const guessCard = $("guessCard");
-  if (guessCard) {
-    const activateGuessCard = () => {
-      if (guessCard.classList.contains("guess-card-collapsed")) {
-        revealGuessCard();
-      }
-    };
-
-    guessCard.addEventListener("click", activateGuessCard);
-    guessCard.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        activateGuessCard();
-      }
-    });
-  }
-
   const shareBtn = $("shareBtn");
 
   if (shareBtn) {
@@ -1447,6 +1432,14 @@ function initialize() {
     );
   }
 
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncGuessDockToKeyboard);
+    window.visualViewport.addEventListener("scroll", syncGuessDockToKeyboard);
+  }
+  window.addEventListener("resize", syncGuessDockToKeyboard);
+  syncGuessDockToKeyboard();
+
+  }
 
   /* -----------------------------------------
      SHOW DEFAULT GAME INFORMATION

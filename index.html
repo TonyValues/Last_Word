@@ -2,60 +2,35 @@
 <html lang="he" dir="rtl">
 
 <head>
-
   <meta charset="utf-8">
-
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
-
+  <meta name="theme-color" content="#0d5960">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>המילה האחרונה</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css?v=11"
-  >
-
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
-
 
 <body>
 
 <main class="app">
 
-
-  <!-- HEADER -->
-
   <header class="topbar">
-
-    <div>
-
-      <div class="eyebrow">משחק ניחושים </div>
-
-      <h1>
-        המילה האחרונה
-      </h1>
-
+    <div class="brand">
+      <div class="eyebrow">משחק ניחושים</div>
+      <h1>המילה האחרונה</h1>
     </div>
 
-
-    <button
-      id="newGameBtn"
-      class="secondary"
-      type="button"
-    >
-      משחקים קודמים
-    </button>
-
-    <button
-      id="instructionsBtn"
-      class="secondary"
-      type="button"
-    >
-      הוראות
-    </button>
-
+    <div class="topbar-actions">
+      <button id="newGameBtn" class="secondary" type="button">
+        משחקים קודמים
+      </button>
+      <button id="instructionsBtn" class="secondary" type="button">
+        הוראות
+      </button>
+    </div>
   </header>
 
   <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
@@ -90,234 +65,104 @@
     <button id="updatesDoneBtn" class="primary" type="button">סגור</button>
   </dialog>
 
-
-  <!-- PREVIOUS GAMES -->
-
-  <section
-    id="gameSelector"
-    class="card game-selector hidden"
-  >
-
-    <div
-      id="gameList"
-      class="game-list"
-    ></div>
-
+  <section id="gameSelector" class="card game-selector hidden">
+    <div id="gameList" class="game-list"></div>
   </section>
 
-
-  <!-- INTRO -->
-
-  <section
-    id="intro"
-    class="card intro-card"
-  >
-
-    <div class="hero-icon">
-      ?
-    </div>
-
-    <h2 id="introTitle">
-      כמה מילים תצטרך?
-    </h2>
-
+  <section id="intro" class="card intro-card">
+    <div class="hero-icon">?</div>
+    <h2 id="introTitle">כמה מילים תצטרך?</h2>
     <p id="introText">
-     המטרה: לנחש את המילה האחרונה
-     בכמה שפחות ניחושים.
+      המטרה: לנחש את המילה האחרונה
+      בכמה שפחות ניחושים.
       בכל ניחוש שגוי תיחשף מילה נוספת
     </p>
-
-    <button
-      id="startBtn"
-      class="primary"
-      type="button"
-    >
-      התחל משחק
-    </button>
-
-    <button
-      id="retryBtn"
-      class="primary hidden"
-      type="button"
-    >
-      נסה שוב
-    </button>
-
+    <button id="startBtn" class="primary" type="button">התחל משחק</button>
+    <button id="retryBtn" class="primary hidden" type="button">נסה שוב</button>
   </section>
-
-
-  <!-- GAME -->
 
   <div class="game-layout">
 
-  <section
-    id="game"
-    class="game hidden"
-  >
+    <section id="game" class="game hidden">
 
-    <div class="game-meta">
-
-      <span id="gameNumber">
-        משחק #001
-      </span>
-
-      <span id="gameDate">
-      </span>
-
-      <span id="revealedCount" aria-live="polite">
-        1 / 5 מילים נחשפו
-      </span>
-
-    </div>
-
-    <div
-      id="gameAuthor"
-      class="game-author"
-    ></div>
-
-
-    <section class="card words-card">
-
-      <div class="clue-toggle-wrap">
-        <button
-          id="clueToggle"
-          class="clue-toggle"
-          type="button"
-          aria-label="הצג כיוון רמז"
-        >
-          <span id="clueValue">?</span>
-        </button>
+      <div class="game-meta">
+        <span id="gameNumber">משחק #001</span>
+        <span id="gameDate"></span>
+        <span id="revealedCount" aria-live="polite">1 / 5 מילים נחשפו</span>
       </div>
 
-      <div
-        id="words"
-        class="words"
-        aria-live="polite"
-      ></div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+
+      <div id="gameAuthor" class="game-author"></div>
+
+      <section class="card words-card">
+        <div class="clue-toggle-wrap">
+          <button
+            id="clueToggle"
+            class="clue-toggle"
+            type="button"
+            aria-label="הצג כיוון רמז"
+          >
+            <span id="clueValue">?</span>
+          </button>
+          <span id="clueLabel" class="clue-label">רמז לכיוון</span>
+        </div>
+
+        <div id="words" class="words" aria-live="polite"></div>
+      </section>
+
+      <section id="guessCard" class="card guess-card" aria-expanded="true">
+        <div class="guess-card-head">
+          <label for="guess">מה המילה האחרונה?</label>
+          <div class="guess-count">
+            <strong id="guesses">0</strong>
+            <span id="guessesLabel">ניחושים</span>
+          </div>
+        </div>
+
+        <div class="guess-row">
+          <input
+            id="guess"
+            type="text"
+            enterkeyhint="send"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            inputmode="text"
+            placeholder="הקלידו את הניחוש"
+          >
+          <button id="guessBtn" class="primary" type="button">נחש</button>
+        </div>
+
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+
+        <button id="quitBtn" class="secondary quit-button" type="button">
+          וותר על המשחק
+        </button>
+      </section>
 
     </section>
 
+    <section id="result" class="card result hidden">
+      <div id="resultIcon" class="result-icon">✓</div>
+      <div class="eyebrow" id="resultLabel">כל הכבוד!</div>
+      <h2 id="resultTitle" tabindex="-1">מצאת את המילה</h2>
+      <p id="resultText"></p>
 
-    <section id="guessCard" class="card guess-card" tabindex="0" aria-expanded="true">
-
-      <label for="guess">
-        מה המילה האחרונה?
-      </label>
-
-
-      <div class="guess-row">
-
-        <input
-          id="guess"
-          autocomplete="off"
-          placeholder="הקלד את הניחוש שלך"
-        >
-
-
-        <button
-          id="guessBtn"
-          class="primary"
-        >
-          נחש
-        </button>
-
+      <div class="answer-box">
+        <span>התשובה</span>
+        <strong id="answer"></strong>
+        <p id="answerExplanation" class="answer-explanation"></p>
       </div>
 
-
-      <div
-        id="feedback"
-        class="feedback"
-        aria-live="polite"
-      ></div>
-
-      <button
-        id="quitBtn"
-        class="secondary quit-button"
-        type="button"
-      >
-        וותר על המשחק
-      </button>
-
+      <button id="againBtn" class="primary" type="button">לשחק שוב</button>
+      <button id="shareBtn" class="secondary share-button" type="button">שתף תוצאה</button>
     </section>
-
-
-    <div class="guess-count">
-      <div>
-        <strong id="guesses">0</strong>
-        <span>ניחושים</span>
-      </div>
-    </div>
-
-  </section>
-
-
-  <!-- RESULT -->
-
-  <section
-    id="result"
-    class="card result hidden"
-  >
-
-    <div
-      id="resultIcon"
-      class="result-icon"
-    >
-      ✓
-    </div>
-
-
-    <div
-      class="eyebrow"
-      id="resultLabel"
-    >
-      כל הכבוד!
-    </div>
-
-
-    <h2 id="resultTitle" tabindex="-1">
-      מצאת את המילה
-    </h2>
-
-
-    <p id="resultText"></p>
-
-
-    <div class="answer-box">
-
-      <span>
-        התשובה
-      </span>
-
-      <strong id="answer"></strong>
-
-      <p
-        id="answerExplanation"
-        class="answer-explanation"
-      ></p>
-
-    </div>
-
-
-    <button
-      id="againBtn"
-      class="primary"
-        type="button"
-    >
-      לשחק שוב
-    </button>
-
-    <button
-      id="shareBtn"
-      class="secondary share-button"
-      type="button"
-    >
-      שתף תוצאה
-    </button>
-
-  </section>
 
   </div>
-
 
   <footer>משחק חדש מתפרסם כל יומיים!!!</footer>
 
@@ -352,11 +197,9 @@
     <div id="suggestionNotice" class="suggestion-notice" role="status" aria-live="polite"></div>
   </section>
 
-
 </main>
 
-
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 
 </body>
 
