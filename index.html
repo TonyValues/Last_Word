@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#0d5960">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>המילה האחרונה</title>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 
 <body>
@@ -21,6 +21,7 @@
     <div class="brand">
       <div class="eyebrow">משחק ניחושים</div>
       <h1>המילה האחרונה</h1>
+      <p class="brand-caption">רמז אחד בכל פעם. תשובה אחת בסוף.</p>
     </div>
 
     <div class="topbar-actions">
@@ -83,10 +84,10 @@
 
   <div class="game-layout">
 
-    <section id="game" class="game hidden">
+    <section id="game" class="game hidden" aria-label="המשחק הנוכחי">
 
       <div class="game-meta">
-        <span id="gameNumber">משחק #001</span>
+        <span class="game-id"><span class="status-dot" aria-hidden="true"></span><span id="gameNumber">משחק #001</span></span>
         <span id="gameDate"></span>
         <span id="revealedCount" aria-live="polite">1 / 5 מילים נחשפו</span>
       </div>
@@ -97,7 +98,14 @@
 
       <div id="gameAuthor" class="game-author"></div>
 
-      <section class="card words-card">
+      <section class="card words-card" aria-labelledby="wordsTitle">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">הרצף</div>
+            <h2 id="wordsTitle">איזו מילה מגיעה אחרונה?</h2>
+          </div>
+          <span class="sequence-count" aria-hidden="true">01</span>
+        </div>
         <div class="clue-toggle-wrap">
           <button
             id="clueToggle"
@@ -107,7 +115,7 @@
           >
             <span id="clueValue">?</span>
           </button>
-          <span id="clueLabel" class="clue-label">רמז לכיוון</span>
+          <span id="clueLabel" class="clue-label">לחצו לקבלת רמז לכיוון</span>
         </div>
 
         <div id="words" class="words" aria-live="polite"></div>
@@ -115,7 +123,7 @@
 
       <section id="guessCard" class="card guess-card" aria-expanded="true">
         <div class="guess-card-head">
-          <label for="guess">מה המילה האחרונה?</label>
+          <label for="guess"><span class="input-kicker">הניחוש שלך</span>מה המילה האחרונה?</label>
           <div class="guess-count">
             <strong id="guesses">0</strong>
             <span id="guessesLabel">ניחושים</span>
@@ -134,7 +142,7 @@
             inputmode="text"
             placeholder="הקלידו את הניחוש"
           >
-          <button id="guessBtn" class="primary" type="button">נחש</button>
+          <button id="guessBtn" class="primary" type="button"><span>נחש</span><span class="button-arrow" aria-hidden="true">←</span></button>
         </div>
 
         <div id="feedback" class="feedback" aria-live="polite"></div>
