@@ -31,6 +31,21 @@
       </button>
     </div>
 
+    <div id="authPanel" class="auth-panel">
+      <form id="authForm" class="auth-form">
+        <label for="authEmail">כינוי לשמירת המשחקים</label>
+        <div class="auth-row">
+          <input id="authEmail" type="email" autocomplete="email" placeholder=" האימייל שלך או כינוי" required>
+          <button id="authSubmit" class="secondary" type="submit">שמור משתמש</button>
+        </div>
+        <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
+      </form>
+      <div id="signedInPanel" class="signed-in-panel hidden">
+        <span id="signedInEmail"></span>
+        <button id="signOutBtn" class="secondary" type="button">יציאה</button>
+      </div>
+    </div>
+
   </header>
 
   <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
@@ -56,10 +71,10 @@
     <div class="updates-body">
       <p>הוספנו כמה שיפורים חדשים:</p>
       <ul class="instructions-list updates-list">
+        <li>אפשר להרשם עם כינוי או אימייל לשמירת התוצאות</li>
+        <li>נוספו סטטיסטיקות משחקים</li>
         <li>המשחקים שפתרתם כבר מסומנים בירוק</li>
         <li>הרמז שונה מהכיוון לרמז מילולי </li>
-        <li>חלון ההקלדה צף עם הגלילה</li>
-        <li>המילים ממוספרות</li>
       </ul>
     </div>
     <button id="updatesDoneBtn" class="primary" type="button">סגור</button>
@@ -84,21 +99,6 @@
   <div class="game-layout">
 
     <section id="game" class="game hidden" aria-label="המשחק הנוכחי">
-
-      <div id="authPanel" class="auth-panel">
-        <form id="authForm" class="auth-form">
-          <label for="authEmail">כינוי לשמירת המשחקים</label>
-          <div class="auth-row">
-            <input id="authEmail" type="email" autocomplete="email" placeholder=" האימייל שלך או כינוי" required>
-            <button id="authSubmit" class="secondary" type="submit">שמור משתמש</button>
-          </div>
-          <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
-        </form>
-        <div id="signedInPanel" class="signed-in-panel hidden">
-          <span id="signedInEmail"></span>
-          <button id="signOutBtn" class="secondary" type="button">יציאה</button>
-        </div>
-      </div>
 
       <div class="game-meta">
         <span class="game-id"><span class="status-dot" aria-hidden="true"></span><span id="gameNumber">משחק #001</span></span>
@@ -186,7 +186,10 @@
           <span><b id="statsWithClue">0</b> עם רמז</span>
           <span><b id="statsWithoutClue">0</b> בלי רמז</span>
         </div>
-        <div id="statsDistribution" class="stats-distribution"></div>
+        <div class="stats-chart" aria-label="מספר שחקנים לפי מספר מילים שנחשפו">
+          <div class="stats-y-axis" aria-hidden="true"><span id="statsMaxPlayers">0</span><span>0</span></div>
+          <div id="statsDistribution" class="stats-distribution"></div>
+        </div>
       </section>
 
       <button id="againBtn" class="primary" type="button">לשחק שוב</button>

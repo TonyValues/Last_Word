@@ -267,13 +267,23 @@ async function renderGameStats(game) {
 
   const distribution = $("statsDistribution");
   distribution.innerHTML = "";
-  Object.entries(data?.distribution || {})
-    .sort(([first], [second]) => Number(first) - Number(second))
-    .forEach(([wordCount, count]) => {
-      const item = document.createElement("span");
-      item.textContent = `${wordCount} ${Number(wordCount) === 1 ? "מילה" : "מילים"}: ${count}`;
-      distribution.appendChild(item);
-    });
+  const entries = Object.entries(data?.distribution || {})
+    .map(([wordCount, count]) => [Number(wordCount), Number(count)])
+    .sort(([first], [second]) => first - second);
+  const maxPlayers = Math.max(...entries.map(([, count]) => count), 0);
+  $("statsMaxPlayers").textContent = String(maxPlayers);
+
+  entries.forEach(([wordCount, count]) => {
+    const item = document.createElement("div");
+    item.className = "stats-bar-group";
+    item.innerHTML = `
+      <span class="stats-bar-value">${count}</span>
+      <span class="stats-bar" style="height:${maxPlayers ? Math.max(8, (count / maxPlayers) * 100) : 8}%"></span>
+      <span class="stats-bar-label">${wordCount}</span>
+    `;
+    item.setAttribute("aria-label", `${count} שחקנים פתרו לאחר חשיפת ${wordCount} מילים`);
+    distribution.appendChild(item);
+  });
 
   statsPanel.classList.remove("hidden");
 }
