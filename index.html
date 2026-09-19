@@ -30,6 +30,21 @@
         הוראות
       </button>
     </div>
+
+    <div id="authPanel" class="auth-panel">
+      <form id="authForm" class="auth-form">
+        <label for="authEmail">שמירה בין מכשירים</label>
+        <div class="auth-row">
+          <input id="authEmail" type="email" autocomplete="email" placeholder="האימייל שלך" required>
+          <button id="authSubmit" class="secondary" type="submit">שמרו את החשבון</button>
+        </div>
+        <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
+      </form>
+      <div id="signedInPanel" class="signed-in-panel hidden">
+        <span id="signedInEmail"></span>
+        <button id="signOutBtn" class="secondary" type="button">יציאה</button>
+      </div>
+    </div>
   </header>
 
   <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
@@ -163,6 +178,16 @@
         <p id="answerExplanation" class="answer-explanation"></p>
       </div>
 
+      <section id="gameStats" class="game-stats hidden" aria-label="סטטיסטיקות המשחק">
+        <strong>סטטיסטיקות שחקנים</strong>
+        <div class="stats-summary">
+          <span><b id="statsSolved">0</b> פתרו</span>
+          <span><b id="statsWithClue">0</b> עם רמז</span>
+          <span><b id="statsWithoutClue">0</b> בלי רמז</span>
+        </div>
+        <div id="statsDistribution" class="stats-distribution"></div>
+      </section>
+
       <button id="againBtn" class="primary" type="button">לשחק שוב</button>
       <button id="shareBtn" class="secondary share-button" type="button">שתף תוצאה</button>
     </section>
@@ -204,7 +229,8 @@
 
 </main>
 
-<script src="app.js?v=13"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js?v=14"></script>
 
 </body>
 

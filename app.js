@@ -6,10 +6,17 @@ let finished = false;
 let wonGame = false;
 let solvedWithoutClues = false;
 let clueOpen = false;
+let clueUsed = false;
+let solvedAtRevealed = 0;
 const GAME_STATE_KEY = "the-last-word-current-game";
 const ARCHIVE_STATE_KEY = "the-last-word-game-states";
 const UPDATES_KEY = "the-last-word-updates-hidden";
+const PLAYER_EMAIL_KEY = "the-last-word-player-email";
+const SUPABASE_URL = "https://eizhmobwteldvzvlknsv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_iaHnGQYbwrqUQtHam7AtzA_8L80Vepk";
 let uiInitialized = false;
+let supabaseClient = null;
+let currentUser = null;
 
 
 /* =========================================
@@ -18,6 +25,81 @@ let uiInitialized = false;
 
 function $(id) {
   return document.getElementById(id);
+}
+
+
+async function initializeSupabase() {
+  if (!window.supabase?.createClient) {
+    return;
+  }
+
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data.session?.user || null;
+
+  if (!currentUser) {
+    const { data: anonymousData } = await supabaseClient.auth.signInAnonymously();
+    currentUser = anonymousData.user || null;
+  }
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null;
+    renderAuth();
+  });
+}
+
+
+function renderAuth() {
+  const authForm = $("authForm");
+  const signedInPanel = $("signedInPanel");
+  const signedInEmail = $("signedInEmail");
+
+  const hasEmail = Boolean(currentUser?.email);
+  authForm?.classList.toggle("hidden", hasEmail);
+  signedInPanel?.classList.toggle("hidden", !currentUser);
+  if (signedInEmail) {
+    signedInEmail.textContent = currentUser?.email || "שמירה אוטומטית פעילה";
+  }
+
+  const emailInput = $("authEmail");
+  if (emailInput && !emailInput.value) {
+    emailInput.value = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
+  }
+}
+
+
+async function requestMagicLink(event) {
+  event.preventDefault();
+
+  const emailInput = $("authEmail");
+  const message = $("authMessage");
+  const submitButton = $("authSubmit");
+
+  if (!supabaseClient || !emailInput || !message) {
+    return;
+  }
+
+  const email = emailInput.value.trim();
+  localStorage.setItem(PLAYER_EMAIL_KEY, email);
+  submitButton?.setAttribute("disabled", "disabled");
+  message.textContent = "שולחים קישור...";
+
+  const { error } = currentUser?.is_anonymous
+    ? await supabaseClient.auth.updateUser({ email })
+    : await supabaseClient.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href }
+      });
+
+  message.textContent = error
+    ? "לא הצלחנו לשמור את האימייל. נסו שוב."
+    : "בדקו את תיבת הדואר ואשרו את הקישור כדי לשמור את החשבון.";
+  submitButton?.removeAttribute("disabled");
+}
+
+
+async function signOut() {
+  await supabaseClient?.auth.signOut();
 }
 
 
@@ -149,6 +231,70 @@ function getSavedGameState(game) {
 }
 
 
+async function getCloudGameState(game) {
+  if (!supabaseClient || !currentUser || !game) {
+    return null;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("game_progress")
+    .select("game_id, revealed, guesses, finished, won_game, solved_without_clues, clue_used, solved_at_revealed")
+    .eq("user_id", currentUser.id)
+    .eq("game_id", game.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    id: data.game_id,
+    revealed: data.revealed,
+    guesses: data.guesses,
+    finished: data.finished,
+    wonGame: data.won_game,
+    solvedWithoutClues: data.solved_without_clues,
+    clueUsed: data.clue_used,
+    solvedAtRevealed: data.solved_at_revealed
+  };
+}
+
+
+async function renderGameStats(game) {
+  const statsPanel = $("gameStats");
+
+  if (!statsPanel || !supabaseClient || !game) {
+    return;
+  }
+
+  const { data, error } = await supabaseClient.rpc("get_game_statistics", {
+    target_game_id: game.id
+  });
+
+  if (error || currentGame !== game) {
+    statsPanel.classList.add("hidden");
+    return;
+  }
+
+  const solvedCount = Number(data?.solved_count || 0);
+  $("statsSolved").textContent = String(solvedCount);
+  $("statsWithClue").textContent = String(data?.with_clue || 0);
+  $("statsWithoutClue").textContent = String(data?.without_clue || 0);
+
+  const distribution = $("statsDistribution");
+  distribution.innerHTML = "";
+  Object.entries(data?.distribution || {})
+    .sort(([first], [second]) => Number(first) - Number(second))
+    .forEach(([wordCount, count]) => {
+      const item = document.createElement("span");
+      item.textContent = `${wordCount} ${Number(wordCount) === 1 ? "מילה" : "מילים"}: ${count}`;
+      distribution.appendChild(item);
+    });
+
+  statsPanel.classList.remove("hidden");
+}
+
+
 function saveGameState() {
   if (!currentGame) {
     return;
@@ -161,7 +307,9 @@ function saveGameState() {
       guesses,
       finished,
       wonGame,
-      solvedWithoutClues
+      solvedWithoutClues,
+      clueUsed,
+      solvedAtRevealed
     };
     const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
     savedStates[currentGame.id] = state;
@@ -169,6 +317,21 @@ function saveGameState() {
 
     if (isLatestPublishedGame(currentGame)) {
       localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
+    }
+
+    if (supabaseClient && currentUser) {
+      void supabaseClient.from("game_progress").upsert({
+        user_id: currentUser.id,
+        game_id: currentGame.id,
+        revealed: state.revealed,
+        guesses: state.guesses,
+        finished: state.finished,
+        won_game: state.wonGame,
+        solved_without_clues: state.solvedWithoutClues,
+        clue_used: state.clueUsed,
+        solved_at_revealed: state.solvedAtRevealed || null,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,game_id" });
     }
   } catch (error) {
     // The game still works when storage is unavailable.
@@ -229,6 +392,10 @@ function toggleClue() {
   }
 
   clueOpen = !clueOpen;
+  if (clueOpen) {
+    clueUsed = true;
+    saveGameState();
+  }
   renderClueButton();
 }
 
@@ -384,7 +551,7 @@ function isLatestPublishedGame(game) {
    START GAME
 ========================================= */
 
-function startGame(selectedGame, restart = false) {
+async function startGame(selectedGame, restart = false) {
 
   if (!selectedGame) {
     showNoGames();
@@ -393,12 +560,16 @@ function startGame(selectedGame, restart = false) {
 
   currentGame = selectedGame;
 
-  const savedState = restart ? null : getSavedGameState(selectedGame);
+  const savedState = restart
+    ? null
+    : await getCloudGameState(selectedGame) || getSavedGameState(selectedGame);
   revealed = savedState?.revealed || 1;
   guesses = savedState?.guesses || 0;
   finished = savedState?.finished || false;
   wonGame = savedState?.wonGame || false;
   solvedWithoutClues = savedState?.solvedWithoutClues || false;
+  clueUsed = savedState?.clueUsed || false;
+  solvedAtRevealed = savedState?.solvedAtRevealed || 0;
   clueOpen = false;
 
 
@@ -483,6 +654,7 @@ function startGame(selectedGame, restart = false) {
   renderWords();
   updateGuessCount();
   renderClueButton();
+  $("gameStats")?.classList.add("hidden");
   const guessCard = $("guessCard");
   if (guessCard) {
     guessCard.classList.remove("hidden");
@@ -726,7 +898,8 @@ function submitGuess() {
 
   if (isCorrectAnswer(guess)) {
 
-    solvedWithoutClues = guesses === 1;
+    solvedWithoutClues = !clueUsed;
+    solvedAtRevealed = revealed;
     revealed = currentGame.words.length;
     renderWords();
     updateGuessCount();
@@ -804,6 +977,10 @@ function finish(won, quit = false) {
   }
 
   saveGameState();
+
+  if (won) {
+    window.setTimeout(() => renderGameStats(currentGame), 300);
+  }
 
 
   const game = $("game");
@@ -1277,6 +1454,7 @@ function initialize() {
 
   renderGameList();
   renderClueButton();
+  renderAuth();
 
 
   /* -----------------------------------------
@@ -1295,6 +1473,16 @@ function initialize() {
 
   if (!uiInitialized) {
     uiInitialized = true;
+
+  const authForm = $("authForm");
+  if (authForm) {
+    authForm.addEventListener("submit", requestMagicLink);
+  }
+
+  const signOutBtn = $("signOutBtn");
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", signOut);
+  }
 
   if (startBtn) {
 
@@ -1508,6 +1696,7 @@ function initialize() {
 
 async function startApplication() {
   try {
+    await initializeSupabase();
     await loadGames();
     initialize();
   } catch (error) {

@@ -31,6 +31,15 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 }
 .brand{min-width:0}
 .topbar-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.auth-panel{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:250px}
+.auth-form{display:grid;gap:4px;width:100%}
+.auth-form label{font-size:11px;font-weight:800;color:var(--muted)}
+.auth-row{display:flex;gap:5px}
+.auth-row input{min-width:0;flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;font-size:13px}
+.auth-row button{padding:8px 10px;min-height:36px;font-size:12px;white-space:nowrap}
+.auth-message{min-height:15px;color:var(--muted);font-size:11px}
+.signed-in-panel{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:700}
+.signed-in-panel button{padding:7px 10px;min-height:34px;font-size:12px}
 .eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px}
 h1{font-size:36px;letter-spacing:-.5px;margin:0;color:var(--primary-dark)}
 h2{font-size:25px;margin:8px 0 10px}
@@ -88,6 +97,12 @@ h2{font-size:25px;margin:8px 0 10px}
 .difficulty-easy{background:#e3f5e9;color:#16834b}
 .difficulty-medium{background:#fff1d8;color:#a86600}
 .difficulty-hard{background:#fde5e5;color:#b52e2e}
+.game-stats{margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#f8fafb;color:var(--muted);font-size:12px}
+.game-stats>strong{display:block;color:var(--text);font-size:13px;margin-bottom:7px}
+.stats-summary{display:flex;flex-wrap:wrap;gap:8px 14px}
+.stats-summary b{color:var(--primary);font-size:16px}
+.stats-distribution{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.stats-distribution span{padding:4px 7px;border-radius:7px;background:#e8eef0;font-size:11px;font-weight:700}
 .words{display:grid;grid-template-columns:1fr;gap:8px}
 .word{min-height:52px;border:1px solid var(--line);border-radius:13px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 12px;padding-inline:44px 12px;font-size:18px;font-weight:700;background:#fbfcfc;position:relative}
 .word-index{position:absolute;inset-inline-start:10px;width:24px;height:24px;border-radius:8px;background:#e8eef0;color:var(--muted);font-size:11px;font-weight:800;display:grid;place-items:center}
@@ -170,6 +185,8 @@ code{font-family:monospace}
   h1{font-size:27px}
   .topbar-actions{width:100%}
   .topbar-actions .secondary{flex:1;font-size:14px;padding-block:8px;min-height:38px}
+  .auth-panel{width:100%;min-width:0;justify-content:stretch}
+  .auth-form{width:100%}
   .intro-card{padding:32px 18px}
   .intro-card .primary{width:100%}
   .game-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
