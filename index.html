@@ -55,10 +55,10 @@
     <div class="updates-body">
       <p>הוספנו כמה שיפורים חדשים:</p>
       <ul class="instructions-list updates-list">
+        <li>המשחקים שפתרתם כבר מסומנים בירוק</li>
+        <li>הרמז שונה מהכיוון לרמז מילולי </li>
         <li>חלון ההקלדה צף עם הגלילה</li>
         <li>המילים ממוספרות</li>
-        <li>המילה האחרונה נוספה ומודגשת</li>
-        <li>שדרגנו את כפתור השיתוף, שוב</li>
       </ul>
     </div>
     <button id="updatesDoneBtn" class="primary" type="button">סגור</button>
@@ -101,6 +101,7 @@
           <div>
             <h2 id="wordsTitle">איזו מילה מגיעה אחרונה?</h2>
           </div>
+          <span id="difficultyValue" class="difficulty-badge" aria-label="רמת קושי"></span>
         </div>
         <div class="clue-toggle-wrap">
           <button
@@ -111,7 +112,7 @@
           >
             <span id="clueValue">?</span>
           </button>
-          <span id="clueLabel" class="clue-label">לחצו לקבלת רמז לכיוון</span>
+          <span id="clueLabel" class="clue-label">לחצו לקבלת רמז</span>
         </div>
 
         <div id="words" class="words" aria-live="polite"></div>

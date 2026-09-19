@@ -7,6 +7,7 @@ let wonGame = false;
 let solvedWithoutClues = false;
 let clueOpen = false;
 const GAME_STATE_KEY = "the-last-word-current-game";
+const ARCHIVE_STATE_KEY = "the-last-word-game-states";
 const UPDATES_KEY = "the-last-word-updates-hidden";
 let uiInitialized = false;
 
@@ -87,6 +88,8 @@ function parseGamesCsv(csvText) {
         words,
         answers,
         explanation: game.explanation,
+        clue: game.clue || "",
+        difficulty: Number(game.difficulty) || 0,
         direction: game.direction || game.clueDirection || game.arrow || game.hintDirection || game.hint || "",
         arrow: game.arrow || game.hintDirection || game.direction || game.clueDirection || game.hint || ""
       };
@@ -126,15 +129,21 @@ async function loadGames() {
 
 
 function getSavedGameState(game) {
-  if (!game || !isLatestPublishedGame(game)) {
+  if (!game) {
     return null;
   }
 
   try {
-    const savedState = JSON.parse(localStorage.getItem(GAME_STATE_KEY));
+    const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
+    const savedState = savedStates[game.id];
 
-    return savedState && savedState.id === game.id
-      ? savedState
+    if (savedState) {
+      return savedState;
+    }
+
+    const latestState = JSON.parse(localStorage.getItem(GAME_STATE_KEY));
+    return isLatestPublishedGame(game) && latestState?.id === game.id
+      ? latestState
       : null;
   } catch (error) {
     return null;
@@ -143,19 +152,26 @@ function getSavedGameState(game) {
 
 
 function saveGameState() {
-  if (!currentGame || !isLatestPublishedGame(currentGame)) {
+  if (!currentGame) {
     return;
   }
 
   try {
-    localStorage.setItem(GAME_STATE_KEY, JSON.stringify({
+    const state = {
       id: currentGame.id,
       revealed,
       guesses,
       finished,
       wonGame,
       solvedWithoutClues
-    }));
+    };
+    const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
+    savedStates[currentGame.id] = state;
+    localStorage.setItem(ARCHIVE_STATE_KEY, JSON.stringify(savedStates));
+
+    if (isLatestPublishedGame(currentGame)) {
+      localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
+    }
   } catch (error) {
     // The game still works when storage is unavailable.
   }
@@ -218,24 +234,42 @@ function renderClueButton() {
     return;
   }
 
-  const directionInfo = getDirectionInfo(currentGame);
+  const wordClue = currentGame.clue || "אין רמז מילולי למשחק הזה";
 
   clueToggle.classList.toggle("is-open", clueOpen);
-  clueToggle.style.background = clueOpen ? directionInfo.color : "#e2f1f0";
-  clueToggle.style.borderColor = clueOpen ? directionInfo.color : "#0d5960";
+  clueToggle.style.background = clueOpen ? "#0d5960" : "#e2f1f0";
+  clueToggle.style.borderColor = "#0d5960";
   clueToggle.style.color = clueOpen ? "#ffffff" : "#0d5960";
-  clueValue.textContent = clueOpen ? directionInfo.symbol : "?";
+  clueValue.textContent = clueOpen ? wordClue : "?";
   clueToggle.setAttribute(
     "aria-label",
     clueOpen
-      ? `כיוון הרמז: ${directionInfo.label}`
-      : "הצג כיוון רמז"
+      ? `רמז מילולי: ${wordClue}`
+      : "הצג רמז מילולי"
   );
 
   const clueLabel = $("clueLabel");
   if (clueLabel) {
-    clueLabel.textContent = clueOpen ? directionInfo.label : "רמז לכיוון";
+    clueLabel.textContent = clueOpen ? "רמז מילולי" : "לחצו לקבלת רמז";
   }
+
+  const difficultyValue = $("difficultyValue");
+  const difficultyInfo = getDifficultyInfo(currentGame);
+  if (difficultyValue) {
+    difficultyValue.textContent = difficultyInfo.label;
+    difficultyValue.className = `difficulty-badge ${difficultyInfo.className}`;
+    difficultyValue.classList.toggle("hidden", !difficultyInfo.label);
+  }
+}
+
+
+function getDifficultyInfo(game) {
+  const difficulty = Number(game?.difficulty);
+
+  return {
+    label: difficulty === 1 ? "קל" : difficulty === 2 ? "בינוני" : difficulty === 3 ? "קשה" : "",
+    className: difficulty === 1 ? "difficulty-easy" : difficulty === 2 ? "difficulty-medium" : difficulty === 3 ? "difficulty-hard" : ""
+  };
 }
 
 
@@ -1149,6 +1183,17 @@ function renderGameList() {
     button.className =
       "game-list-item";
 
+    let savedState = null;
+    try {
+      const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
+      savedState = savedStates[gameItem.id];
+    } catch (error) {
+      savedState = null;
+    }
+    const isSolved = Boolean(savedState?.wonGame);
+    button.classList.toggle("is-solved", isSolved);
+    button.setAttribute("aria-label", `${isSolved ? "נפתר, " : ""}משחק #${String(gameItem.id).padStart(3, "0")}`);
+
 
     const isToday = toIsoDate(gameItem.date) === getTodayString();
 
@@ -1200,6 +1245,7 @@ function toggleGameSelector() {
     return;
   }
 
+  renderGameList();
   selector.classList.toggle("hidden");
 }
 
