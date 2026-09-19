@@ -89,9 +89,7 @@ function parseGamesCsv(csvText) {
         answers,
         explanation: game.explanation,
         clue: game.clue || "",
-        difficulty: Number(game.difficulty) || 0,
-        direction: game.direction || game.clueDirection || game.arrow || game.hintDirection || game.hint || "",
-        arrow: game.arrow || game.hintDirection || game.direction || game.clueDirection || game.hint || ""
+        difficulty: Number(game.difficulty) || 0
       };
     })
     .filter(Boolean);
@@ -175,54 +173,6 @@ function saveGameState() {
   } catch (error) {
     // The game still works when storage is unavailable.
   }
-}
-
-
-function getDirectionInfo(game) {
-  if (!game) {
-    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
-  }
-
-  const rawValue = String(
-    game.direction ??
-    game.clueDirection ??
-    game.arrow ??
-    game.hintDirection ??
-    game.hint ??
-    ""
-  ).trim();
-
-  const normalized = normalize(rawValue);
-
-  if (!rawValue) {
-    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
-  }
-
-  if (["straight", "ישר", "forward", "forwards", "direct", "down", "downward", "vertical"].includes(normalized)) {
-    return { key: "straight", symbol: "↓", label: "ישר", color: "#1f9d5a" };
-  }
-
-  if (["reversed", "reverse", "הפוך", "backward", "backwards", "up", "upward"].includes(normalized)) {
-    return { key: "reversed", symbol: "↑", label: "הפוך", color: "#e8681b" };
-  }
-
-  if (["none", "no direction", "לא ידוע", "ללא כיוון", "nodirection", "equal", "equals", "same", "flat"].includes(normalized)) {
-    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
-  }
-
-  if (normalized.includes("down") || normalized.includes("straight")) {
-    return { key: "straight", symbol: "↓", label: "ישר", color: "#1f9d5a" };
-  }
-
-  if (normalized.includes("reverse") || normalized.includes("reversed") || normalized.includes("up")) {
-    return { key: "reversed", symbol: "↑", label: "הפוך", color: "#e8681b" };
-  }
-
-  if (normalized.includes("equal") || normalized.includes("none") || normalized.includes("no")) {
-    return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
-  }
-
-  return { key: "none", symbol: "↔", label: "ללא כיוון", color: "#7a8794" };
 }
 
 
