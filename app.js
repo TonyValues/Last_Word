@@ -29,6 +29,13 @@ function $(id) {
 }
 
 
+function getNicknameStorageKey(baseKey) {
+  return playerNickname
+    ? `${baseKey}:${encodeURIComponent(playerNickname)}`
+    : null;
+}
+
+
 async function initializeSupabase() {
   playerNickname = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
 
@@ -79,6 +86,8 @@ function saveNickname(event) {
   message.textContent = "הכינוי נשמר במכשיר הזה.";
   submitButton?.blur();
   renderAuth();
+  renderGameList();
+  saveGameState();
 }
 
 
@@ -86,6 +95,7 @@ async function signOut() {
   playerNickname = "";
   localStorage.removeItem(PLAYER_EMAIL_KEY);
   renderAuth();
+  renderGameList();
 }
 
 
@@ -195,19 +205,22 @@ async function loadGames() {
 
 
 function getSavedGameState(game) {
-  if (!game) {
+  const archiveKey = getNicknameStorageKey(ARCHIVE_STATE_KEY);
+  const currentGameKey = getNicknameStorageKey(GAME_STATE_KEY);
+
+  if (!game || !archiveKey || !currentGameKey) {
     return null;
   }
 
   try {
-    const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
+    const savedStates = JSON.parse(localStorage.getItem(archiveKey) || "{}");
     const savedState = savedStates[game.id];
 
     if (savedState) {
       return savedState;
     }
 
-    const latestState = JSON.parse(localStorage.getItem(GAME_STATE_KEY));
+    const latestState = JSON.parse(localStorage.getItem(currentGameKey));
     return isLatestPublishedGame(game) && latestState?.id === game.id
       ? latestState
       : null;
@@ -244,6 +257,19 @@ async function getCloudGameState(game) {
 }
 
 
+async function getCloudSolvedGameIds() {
+  if (!supabaseClient || !playerNickname) {
+    return [];
+  }
+
+  const { data, error } = await supabaseClient.rpc("get_nickname_solved_games", {
+    player_nickname: playerNickname
+  });
+
+  return error || !Array.isArray(data) ? [] : data.map(Number);
+}
+
+
 async function renderGameStats(game) {
   const statsPanel = $("gameStats");
 
@@ -260,28 +286,53 @@ async function renderGameStats(game) {
     return;
   }
 
-  const solvedCount = Number(data?.solved_count || 0);
+  const statistics = typeof data === "string" ? JSON.parse(data) : data;
+  const solvedCount = Number(statistics?.solved_count || 0);
   $("statsSolved").textContent = String(solvedCount);
-  $("statsWithClue").textContent = String(data?.with_clue || 0);
-  $("statsWithoutClue").textContent = String(data?.without_clue || 0);
+  $("statsWithClue").textContent = String(statistics?.with_clue || 0);
+  $("statsWithoutClue").textContent = String(statistics?.without_clue || 0);
 
   const distribution = $("statsDistribution");
   distribution.innerHTML = "";
-  const entries = Object.entries(data?.distribution || {})
-    .map(([wordCount, count]) => [Number(wordCount), Number(count)])
+  const distributionData = typeof statistics?.distribution === "string"
+    ? JSON.parse(statistics.distribution)
+    : statistics?.distribution || {};
+  const entries = Object.entries(distributionData)
+    .map(([wordCount, counts]) => {
+      if (typeof counts === "number") {
+        return [Number(wordCount), { withClue: 0, withoutClue: counts }];
+      }
+
+      return [Number(wordCount), {
+        withClue: Number(counts?.with_clue || counts?.withClue || 0),
+        withoutClue: Number(counts?.without_clue || counts?.withoutClue || 0)
+      }];
+    })
     .sort(([first], [second]) => first - second);
-  const maxPlayers = Math.max(...entries.map(([, count]) => count), 0);
+  const maxPlayers = Math.max(
+    ...entries.flatMap(([, counts]) => [counts.withClue, counts.withoutClue]),
+    0
+  );
   $("statsMaxPlayers").textContent = String(maxPlayers);
 
-  entries.forEach(([wordCount, count]) => {
+  if (entries.length === 0) {
+    const emptyState = document.createElement("span");
+    emptyState.className = "stats-empty";
+    emptyState.textContent = "עדיין אין נתוני פתרון למשחק הזה";
+    distribution.appendChild(emptyState);
+  }
+
+  entries.forEach(([wordCount, counts]) => {
     const item = document.createElement("div");
     item.className = "stats-bar-group";
     item.innerHTML = `
-      <span class="stats-bar-value">${count}</span>
-      <span class="stats-bar" style="height:${maxPlayers ? Math.max(8, (count / maxPlayers) * 100) : 8}%"></span>
+      <div class="stats-bars">
+        <span class="stats-bar stats-bar-with-clue" title="עם רמז: ${counts.withClue}" style="height:${maxPlayers ? Math.max(counts.withClue ? 8 : 0, (counts.withClue / maxPlayers) * 100) : 0}%"></span>
+        <span class="stats-bar stats-bar-without-clue" title="בלי רמז: ${counts.withoutClue}" style="height:${maxPlayers ? Math.max(counts.withoutClue ? 8 : 0, (counts.withoutClue / maxPlayers) * 100) : 0}%"></span>
+      </div>
       <span class="stats-bar-label">${wordCount}</span>
     `;
-    item.setAttribute("aria-label", `${count} שחקנים פתרו לאחר חשיפת ${wordCount} מילים`);
+    item.setAttribute("aria-label", `${counts.withClue} שחקנים עם רמז ו-${counts.withoutClue} בלי רמז פתרו לאחר חשיפת ${wordCount} מילים`);
     distribution.appendChild(item);
   });
 
@@ -305,12 +356,17 @@ function saveGameState() {
       clueUsed,
       solvedAtRevealed
     };
-    const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
-    savedStates[currentGame.id] = state;
-    localStorage.setItem(ARCHIVE_STATE_KEY, JSON.stringify(savedStates));
+    const archiveKey = getNicknameStorageKey(ARCHIVE_STATE_KEY);
+    const currentGameKey = getNicknameStorageKey(GAME_STATE_KEY);
 
-    if (isLatestPublishedGame(currentGame)) {
-      localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
+    if (archiveKey && currentGameKey) {
+      const savedStates = JSON.parse(localStorage.getItem(archiveKey) || "{}");
+      savedStates[currentGame.id] = state;
+      localStorage.setItem(archiveKey, JSON.stringify(savedStates));
+
+      if (isLatestPublishedGame(currentGame)) {
+        localStorage.setItem(currentGameKey, JSON.stringify(state));
+      }
     }
 
     if (supabaseClient && playerNickname) {
@@ -1287,7 +1343,7 @@ function openWhatsAppShare(shareText, shareButton) {
    GAME LIST
 ========================================= */
 
-function renderGameList() {
+async function renderGameList() {
 
   const gameList =
     $("gameList");
@@ -1297,6 +1353,7 @@ function renderGameList() {
   }
 
 
+  const cloudSolvedGameIds = new Set(await getCloudSolvedGameIds());
   gameList.innerHTML = "";
 
 
@@ -1314,12 +1371,15 @@ function renderGameList() {
 
     let savedState = null;
     try {
-      const savedStates = JSON.parse(localStorage.getItem(ARCHIVE_STATE_KEY) || "{}");
+      const archiveKey = getNicknameStorageKey(ARCHIVE_STATE_KEY);
+      const savedStates = archiveKey
+        ? JSON.parse(localStorage.getItem(archiveKey) || "{}")
+        : {};
       savedState = savedStates[gameItem.id];
     } catch (error) {
       savedState = null;
     }
-    const isSolved = Boolean(savedState?.wonGame);
+    const isSolved = Boolean(savedState?.wonGame) || cloudSolvedGameIds.has(gameItem.id);
     button.classList.toggle("is-solved", isSolved);
     button.setAttribute("aria-label", `${isSolved ? "נפתר, " : ""}משחק #${String(gameItem.id).padStart(3, "0")}`);
 

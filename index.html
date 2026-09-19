@@ -35,7 +35,7 @@
       <form id="authForm" class="auth-form">
         <label for="authEmail">כינוי לשמירת המשחקים</label>
         <div class="auth-row">
-          <input id="authEmail" type="email" autocomplete="email" placeholder=" האימייל שלך או כינוי" required>
+          <input id="authEmail" type="text" autocomplete="nickname" placeholder="האימייל שלך או כינוי" required>
           <button id="authSubmit" class="secondary" type="submit">שמור משתמש</button>
         </div>
         <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
@@ -190,6 +190,10 @@
           <div class="stats-y-axis" aria-hidden="true"><span id="statsMaxPlayers">0</span><span>0</span></div>
           <div id="statsDistribution" class="stats-distribution"></div>
         </div>
+        <div class="stats-legend" aria-label="מקרא">
+          <span><i class="legend-swatch legend-with-clue"></i>עם רמז</span>
+          <span><i class="legend-swatch legend-without-clue"></i>בלי רמז</span>
+        </div>
       </section>
 
       <button id="againBtn" class="primary" type="button">לשחק שוב</button>
@@ -234,7 +238,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=14"></script>
+<script src="app.js?v=15"></script>
 
 </body>
 
