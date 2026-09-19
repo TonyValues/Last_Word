@@ -31,20 +31,6 @@
       </button>
     </div>
 
-    <div id="authPanel" class="auth-panel">
-      <form id="authForm" class="auth-form">
-        <label for="authEmail">כינוי לשמירת המשחקים</label>
-        <div class="auth-row">
-          <input id="authEmail" type="email" autocomplete="email" placeholder=" האימייל שלך או כינוי" required>
-          <button id="authSubmit" class="secondary" type="submit">שמור משתמש</button>
-        </div>
-        <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
-      </form>
-      <div id="signedInPanel" class="signed-in-panel hidden">
-        <span id="signedInEmail"></span>
-        <button id="signOutBtn" class="secondary" type="button">יציאה</button>
-      </div>
-    </div>
   </header>
 
   <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
@@ -98,6 +84,21 @@
   <div class="game-layout">
 
     <section id="game" class="game hidden" aria-label="המשחק הנוכחי">
+
+      <div id="authPanel" class="auth-panel">
+        <form id="authForm" class="auth-form">
+          <label for="authEmail">כינוי לשמירת המשחקים</label>
+          <div class="auth-row">
+            <input id="authEmail" type="email" autocomplete="email" placeholder=" האימייל שלך או כינוי" required>
+            <button id="authSubmit" class="secondary" type="submit">שמור משתמש</button>
+          </div>
+          <small id="authMessage" class="auth-message" role="status" aria-live="polite"></small>
+        </form>
+        <div id="signedInPanel" class="signed-in-panel hidden">
+          <span id="signedInEmail"></span>
+          <button id="signOutBtn" class="secondary" type="button">יציאה</button>
+        </div>
+      </div>
 
       <div class="game-meta">
         <span class="game-id"><span class="status-dot" aria-hidden="true"></span><span id="gameNumber">משחק #001</span></span>

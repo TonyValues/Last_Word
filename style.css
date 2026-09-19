@@ -31,7 +31,7 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 }
 .brand{min-width:0}
 .topbar-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
-.auth-panel{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:250px}
+.auth-panel{display:flex;align-items:center;justify-content:flex-end;gap:8px;width:100%;margin:0 0 8px;padding:8px 10px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:12px}
 .auth-form{display:grid;gap:4px;width:100%}
 .auth-form label{font-size:11px;font-weight:800;color:var(--muted)}
 .auth-row{display:flex;gap:5px}
@@ -174,18 +174,16 @@ code{font-family:monospace}
   .topbar{
     align-items:flex-start;
     flex-wrap:wrap;
-    position:sticky;
-    top:0;
-    z-index:16;
-    background:linear-gradient(180deg,var(--bg) 78%,transparent);
+    position:static;
+    background:transparent;
     padding:4px 0 5px;
     margin-bottom:5px;
   }
   .brand{width:100%}
   h1{font-size:27px}
-  .topbar-actions{width:100%}
+  .topbar-actions{position:sticky;top:0;z-index:16;width:100%;padding:4px 0 5px;background:linear-gradient(180deg,var(--bg) 78%,transparent)}
   .topbar-actions .secondary{flex:1;font-size:14px;padding-block:8px;min-height:38px}
-  .auth-panel{width:100%;min-width:0;justify-content:stretch}
+  .auth-panel{min-width:0;justify-content:stretch}
   .auth-form{width:100%}
   .intro-card{padding:32px 18px}
   .intro-card .primary{width:100%}

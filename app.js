@@ -17,6 +17,7 @@ const SUPABASE_KEY = "sb_publishable_iaHnGQYbwrqUQtHam7AtzA_8L80Vepk";
 let uiInitialized = false;
 let supabaseClient = null;
 let playerNickname = "";
+let pendingCloudSave = Promise.resolve();
 
 
 /* =========================================
@@ -29,12 +30,13 @@ function $(id) {
 
 
 async function initializeSupabase() {
+  playerNickname = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
+
   if (!window.supabase?.createClient) {
     return;
   }
 
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  playerNickname = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
 }
 
 
@@ -279,7 +281,7 @@ async function renderGameStats(game) {
 
 function saveGameState() {
   if (!currentGame) {
-    return;
+    return Promise.resolve();
   }
 
   try {
@@ -302,7 +304,7 @@ function saveGameState() {
     }
 
     if (supabaseClient && playerNickname) {
-      void supabaseClient.rpc("save_nickname_game_state", {
+      pendingCloudSave = supabaseClient.rpc("save_nickname_game_state", {
         player_nickname: playerNickname,
         target_game_id: currentGame.id,
         state_revealed: state.revealed,
@@ -312,11 +314,19 @@ function saveGameState() {
         state_solved_without_clues: state.solvedWithoutClues,
         state_clue_used: state.clueUsed,
         state_solved_at_revealed: state.solvedAtRevealed || null
+      }).then(({ error }) => {
+        if (error) {
+          console.error("Unable to save nickname game state", error);
+        }
+      }).catch(error => {
+        console.error("Unable to save nickname game state", error);
       });
     }
   } catch (error) {
     // The game still works when storage is unavailable.
   }
+
+  return pendingCloudSave;
 }
 
 
@@ -960,7 +970,8 @@ function finish(won, quit = false) {
   saveGameState();
 
   if (won) {
-    window.setTimeout(() => renderGameStats(currentGame), 300);
+    const wonGameReference = currentGame;
+    void pendingCloudSave.then(() => renderGameStats(wonGameReference));
   }
 
 
