@@ -16,7 +16,7 @@ const SUPABASE_URL = "https://eizhmobwteldvzvlknsv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iaHnGQYbwrqUQtHam7AtzA_8L80Vepk";
 let uiInitialized = false;
 let supabaseClient = null;
-let currentUser = null;
+let playerNickname = "";
 
 
 /* =========================================
@@ -34,18 +34,7 @@ async function initializeSupabase() {
   }
 
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data } = await supabaseClient.auth.getSession();
-  currentUser = data.session?.user || null;
-
-  if (!currentUser) {
-    const { data: anonymousData } = await supabaseClient.auth.signInAnonymously();
-    currentUser = anonymousData.user || null;
-  }
-
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user || null;
-    renderAuth();
-  });
+  playerNickname = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
 }
 
 
@@ -54,11 +43,10 @@ function renderAuth() {
   const signedInPanel = $("signedInPanel");
   const signedInEmail = $("signedInEmail");
 
-  const hasEmail = Boolean(currentUser?.email);
-  authForm?.classList.toggle("hidden", hasEmail);
-  signedInPanel?.classList.toggle("hidden", !currentUser);
+  authForm?.classList.toggle("hidden", Boolean(playerNickname));
+  signedInPanel?.classList.toggle("hidden", !playerNickname);
   if (signedInEmail) {
-    signedInEmail.textContent = currentUser?.email || "שמירה אוטומטית פעילה";
+    signedInEmail.textContent = playerNickname || "";
   }
 
   const emailInput = $("authEmail");
@@ -68,38 +56,34 @@ function renderAuth() {
 }
 
 
-async function requestMagicLink(event) {
+function saveNickname(event) {
   event.preventDefault();
 
   const emailInput = $("authEmail");
   const message = $("authMessage");
   const submitButton = $("authSubmit");
 
-  if (!supabaseClient || !emailInput || !message) {
+  if (!emailInput || !message) {
     return;
   }
 
-  const email = emailInput.value.trim();
-  localStorage.setItem(PLAYER_EMAIL_KEY, email);
-  submitButton?.setAttribute("disabled", "disabled");
-  message.textContent = "שולחים קישור...";
+  const nickname = emailInput.value.trim().toLowerCase();
+  if (!nickname) {
+    return;
+  }
 
-  const { error } = currentUser?.is_anonymous
-    ? await supabaseClient.auth.updateUser({ email })
-    : await supabaseClient.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: window.location.href }
-      });
-
-  message.textContent = error
-    ? "לא הצלחנו לשמור את האימייל. נסו שוב."
-    : "בדקו את תיבת הדואר ואשרו את הקישור כדי לשמור את החשבון.";
-  submitButton?.removeAttribute("disabled");
+  playerNickname = nickname;
+  localStorage.setItem(PLAYER_EMAIL_KEY, nickname);
+  message.textContent = "הכינוי נשמר במכשיר הזה.";
+  submitButton?.blur();
+  renderAuth();
 }
 
 
 async function signOut() {
-  await supabaseClient?.auth.signOut();
+  playerNickname = "";
+  localStorage.removeItem(PLAYER_EMAIL_KEY);
+  renderAuth();
 }
 
 
@@ -232,18 +216,16 @@ function getSavedGameState(game) {
 
 
 async function getCloudGameState(game) {
-  if (!supabaseClient || !currentUser || !game) {
+  if (!supabaseClient || !playerNickname || !game) {
     return null;
   }
 
-  const { data, error } = await supabaseClient
-    .from("game_progress")
-    .select("game_id, revealed, guesses, finished, won_game, solved_without_clues, clue_used, solved_at_revealed")
-    .eq("user_id", currentUser.id)
-    .eq("game_id", game.id)
-    .maybeSingle();
+  const { data, error } = await supabaseClient.rpc("get_nickname_game_state", {
+    player_nickname: playerNickname,
+    target_game_id: game.id
+  });
 
-  if (error || !data) {
+  if (error || !data || !data.game_id) {
     return null;
   }
 
@@ -267,7 +249,7 @@ async function renderGameStats(game) {
     return;
   }
 
-  const { data, error } = await supabaseClient.rpc("get_game_statistics", {
+  const { data, error } = await supabaseClient.rpc("get_nickname_game_statistics", {
     target_game_id: game.id
   });
 
@@ -319,19 +301,18 @@ function saveGameState() {
       localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
     }
 
-    if (supabaseClient && currentUser) {
-      void supabaseClient.from("game_progress").upsert({
-        user_id: currentUser.id,
-        game_id: currentGame.id,
-        revealed: state.revealed,
-        guesses: state.guesses,
-        finished: state.finished,
-        won_game: state.wonGame,
-        solved_without_clues: state.solvedWithoutClues,
-        clue_used: state.clueUsed,
-        solved_at_revealed: state.solvedAtRevealed || null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id,game_id" });
+    if (supabaseClient && playerNickname) {
+      void supabaseClient.rpc("save_nickname_game_state", {
+        player_nickname: playerNickname,
+        target_game_id: currentGame.id,
+        state_revealed: state.revealed,
+        state_guesses: state.guesses,
+        state_finished: state.finished,
+        state_won_game: state.wonGame,
+        state_solved_without_clues: state.solvedWithoutClues,
+        state_clue_used: state.clueUsed,
+        state_solved_at_revealed: state.solvedAtRevealed || null
+      });
     }
   } catch (error) {
     // The game still works when storage is unavailable.
@@ -1476,7 +1457,7 @@ function initialize() {
 
   const authForm = $("authForm");
   if (authForm) {
-    authForm.addEventListener("submit", requestMagicLink);
+    authForm.addEventListener("submit", saveNickname);
   }
 
   const signOutBtn = $("signOutBtn");
