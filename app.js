@@ -17,6 +17,7 @@ const SUPABASE_KEY = "sb_publishable_iaHnGQYbwrqUQtHam7AtzA_8L80Vepk";
 let uiInitialized = false;
 let supabaseClient = null;
 let playerNickname = "";
+let guestSessionId = "";
 let pendingCloudSave = Promise.resolve();
 
 
@@ -38,6 +39,13 @@ function getNicknameStorageKey(baseKey) {
 
 async function initializeSupabase() {
   playerNickname = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
+
+  try {
+    guestSessionId = sessionStorage.getItem("the-last-word-guest-session") || crypto.randomUUID();
+    sessionStorage.setItem("the-last-word-guest-session", guestSessionId);
+  } catch (error) {
+    guestSessionId = `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
 
   if (!window.supabase?.createClient) {
     return;
@@ -337,6 +345,26 @@ async function renderGameStats(game) {
   });
 
   statsPanel.classList.remove("hidden");
+}
+
+
+function saveGuestResult() {
+  if (playerNickname || !supabaseClient || !guestSessionId || !currentGame || !wonGame) {
+    return;
+  }
+
+  pendingCloudSave = supabaseClient.rpc("save_guest_game_result", {
+    guest_session_id: guestSessionId,
+    target_game_id: currentGame.id,
+    result_clue_used: clueUsed,
+    result_solved_at_revealed: solvedAtRevealed
+  }).then(({ error }) => {
+    if (error) {
+      console.error("Unable to save guest game result", error);
+    }
+  }).catch(error => {
+    console.error("Unable to save guest game result", error);
+  });
 }
 
 
@@ -1036,6 +1064,7 @@ function finish(won, quit = false) {
   saveGameState();
 
   if (won) {
+    saveGuestResult();
     const wonGameReference = currentGame;
     void pendingCloudSave.then(() => renderGameStats(wonGameReference));
   }
