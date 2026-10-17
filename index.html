@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#0d5960">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>המילה האחרונה</title>
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 
 <body>
@@ -48,6 +48,31 @@
 
   </header>
 
+  <section id="adminPanel" class="admin-panel card hidden" aria-labelledby="adminTitle">
+    <div class="admin-heading">
+      <div>
+        <div class="eyebrow">ניהול משחקים</div>
+        <h2 id="adminTitle">עריכת מאגר המשחקים</h2>
+      </div>
+    </div>
+    <p class="admin-notice">עריכה ושמירה נשמרות בדפדפן הזה. כדי לפרסם לכולם, הורידו את הקובץ והחליפו בו את games.csv באתר. הכינוי אינו אימות מאובטח.</p>
+    <div class="admin-toolbar">
+      <span id="adminRowCount" class="admin-row-count"></span>
+      <div class="admin-toolbar-actions">
+        <button id="adminAddRowBtn" class="secondary" type="button">הוסף משחק</button>
+        <button id="adminSaveBtn" class="primary" type="button">שמור שינויים</button>
+        <button id="exportGamesBtn" class="secondary" type="button">הורדת games.csv</button>
+      </div>
+    </div>
+    <div class="admin-table-scroll" role="region" aria-label="טבלת משחקים לעריכה" tabindex="0">
+      <table id="adminGamesTable" class="admin-table">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="adminMessage" class="admin-message" role="status" aria-live="polite"></div>
+  </section>
+
   <dialog id="instructionsDialog" class="instructions-dialog" aria-labelledby="instructionsTitle">
     <div class="instructions-header">
       <h2 id="instructionsTitle">איך משחקים?</h2>
@@ -69,7 +94,7 @@
       <button id="closeUpdatesBtn" class="dialog-close" type="button" aria-label="סגור עדכונים">×</button>
     </div>
     <div class="updates-body">
-      <p>הוספנו כמה שיפורים חדשים:</p>
+      <p>נוספו כמה שיפורים חדשים:</p>
       <ul class="instructions-list updates-list">
         <li>אפשר להרשם עם כינוי או אימייל לשמירת התוצאות</li>
         <li>נוספו סטטיסטיקות משחקים</li>
@@ -238,7 +263,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=17"></script>
 
 </body>
 

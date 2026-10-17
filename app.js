@@ -12,6 +12,20 @@ const GAME_STATE_KEY = "the-last-word-current-game";
 const ARCHIVE_STATE_KEY = "the-last-word-game-states";
 const UPDATES_KEY = "the-last-word-updates-hidden";
 const PLAYER_EMAIL_KEY = "the-last-word-player-email";
+const ADMIN_DATA_KEY = "the-last-word-admin-csv-data";
+const ADMIN_NICKNAME = "315814947";
+const CSV_HEADERS = ["id", "date", "author", "words", "answers", "explanation", "direction", "difficulty", "clue"];
+const CSV_HEADER_LABELS = {
+  id: "מספר",
+  date: "תאריך",
+  author: "יוצר",
+  words: "מילים",
+  answers: "תשובות",
+  explanation: "הסבר",
+  direction: "כיוון",
+  difficulty: "קושי",
+  clue: "רמז"
+};
 const SUPABASE_URL = "https://eizhmobwteldvzvlknsv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iaHnGQYbwrqUQtHam7AtzA_8L80Vepk";
 let uiInitialized = false;
@@ -19,6 +33,9 @@ let supabaseClient = null;
 let playerNickname = "";
 let guestSessionId = "";
 let pendingCloudSave = Promise.resolve();
+let baseGamesCsv = "";
+let csvHeaders = [...CSV_HEADERS];
+let adminRows = [];
 
 
 /* =========================================
@@ -70,6 +87,8 @@ function renderAuth() {
   if (emailInput && !emailInput.value) {
     emailInput.value = localStorage.getItem(PLAYER_EMAIL_KEY) || "";
   }
+
+  renderAdminPanel();
 }
 
 
@@ -174,6 +193,7 @@ function parseGamesCsv(csvText) {
         words,
         answers,
         explanation: game.explanation,
+        direction: game.direction || "straight",
         clue: game.clue || "",
         difficulty: Number(game.difficulty) || 0
       };
@@ -183,32 +203,215 @@ function parseGamesCsv(csvText) {
 
 
 function toIsoDate(dateString) {
-  if (!dateString) {
-    return "";
-  }
-
+  if (!dateString) return "";
   const parts = dateString.split(/[/-]/);
-
-  if (parts.length !== 3) {
-    return dateString;
-  }
-
+  if (parts.length !== 3) return dateString;
   if (parts[0].length === 4) {
     return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
   }
-
   return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
 }
 
 
 async function loadGames() {
-  const response = await fetch("games.csv?v=3");
+  const response = await fetch("games.csv?v=4");
+  if (!response.ok) throw new Error(`Unable to load games.csv (${response.status})`);
 
-  if (!response.ok) {
-    throw new Error(`Unable to load games.csv (${response.status})`);
+  baseGamesCsv = await response.text();
+  const parsedCsv = parseAdminCsv(baseGamesCsv);
+  csvHeaders = parsedCsv.headers;
+  adminRows = parsedCsv.rows;
+  try {
+    const savedData = JSON.parse(localStorage.getItem(ADMIN_DATA_KEY) || "null");
+    if (savedData?.exportedCsv === baseGamesCsv) {
+      adminRows = parsedCsv.rows;
+    } else if (savedData?.baseCsv === baseGamesCsv && Array.isArray(savedData.rows)) {
+      csvHeaders = Array.isArray(savedData.headers) ? savedData.headers : parsedCsv.headers;
+      adminRows = savedData.rows;
+    }
+  } catch (error) {
+    adminRows = parsedCsv.rows;
   }
+  syncGamesFromAdminRows();
+}
 
-  GAMES = parseGamesCsv(await response.text());
+
+function parseAdminCsv(csvText) {
+  const lines = csvText.trimEnd().split(/\r?\n/);
+  const headers = parseCsvLine(lines.shift() || "").map(header => header.replace(/^\uFEFF/, ""));
+  const rows = lines
+    .filter(line => line.trim())
+    .map(line => {
+      const values = parseCsvLine(line);
+      return Object.fromEntries(headers.map((header, index) => [header, values[index] || ""]));
+    });
+  return { headers, rows };
+}
+
+
+function renderAdminPanel() {
+  const panel = $("adminPanel");
+  if (!panel) return;
+  const isAdmin = playerNickname === ADMIN_NICKNAME;
+  panel.classList.toggle("hidden", !isAdmin);
+  if (isAdmin) renderAdminTable();
+}
+
+
+function renderAdminTable() {
+  const table = $("adminGamesTable");
+  if (!table) return;
+  const thead = table.querySelector("thead");
+  const tbody = table.querySelector("tbody");
+  thead.replaceChildren();
+  tbody.replaceChildren();
+
+  const headerRow = document.createElement("tr");
+  csvHeaders.forEach(header => {
+    const cell = document.createElement("th");
+    cell.scope = "col";
+    cell.textContent = CSV_HEADER_LABELS[header] || header;
+    headerRow.appendChild(cell);
+  });
+  const actionsHeader = document.createElement("th");
+  actionsHeader.scope = "col";
+  actionsHeader.textContent = "פעולות";
+  headerRow.appendChild(actionsHeader);
+  thead.appendChild(headerRow);
+
+  adminRows.forEach((row, rowIndex) => {
+    const tableRow = document.createElement("tr");
+    csvHeaders.forEach(header => {
+      const cell = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = `admin-cell-input admin-cell-${header}`;
+      input.value = row[header] || "";
+      input.dataset.rowIndex = String(rowIndex);
+      input.dataset.column = header;
+      input.setAttribute("aria-label", `משחק ${row.id || rowIndex + 1}, ${CSV_HEADER_LABELS[header] || header}`);
+      cell.appendChild(input);
+      tableRow.appendChild(cell);
+    });
+    const actionCell = document.createElement("td");
+    actionCell.className = "admin-row-actions";
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "secondary admin-remove-row";
+    removeButton.dataset.removeRow = String(rowIndex);
+    removeButton.textContent = "הסרה";
+    removeButton.setAttribute("aria-label", `הסרת משחק ${row.id || rowIndex + 1}`);
+    actionCell.appendChild(removeButton);
+    tableRow.appendChild(actionCell);
+    tbody.appendChild(tableRow);
+  });
+  $("adminRowCount").textContent = `${adminRows.length} משחקים`;
+}
+
+
+function getAdminRowsFromTable() {
+  const rows = adminRows.map(row => ({ ...row }));
+  $("adminGamesTable").querySelectorAll("input[data-row-index]").forEach(input => {
+    const rowIndex = Number(input.dataset.rowIndex);
+    const column = input.dataset.column;
+    if (rows[rowIndex] && csvHeaders.includes(column)) rows[rowIndex][column] = input.value;
+  });
+  return rows;
+}
+
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return /[\",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+
+function serializeAdminCsv(rows = adminRows) {
+  const header = csvHeaders.map(csvEscape).join(",");
+  const records = rows.map(row => csvHeaders.map(column => csvEscape(row[column])).join(","));
+  return `${header}\r\n${records.join("\r\n")}\r\n`;
+}
+
+
+function syncGamesFromAdminRows() {
+  GAMES = parseGamesCsv(serializeAdminCsv());
+}
+
+
+function saveAdminTable() {
+  const message = $("adminMessage");
+  adminRows = getAdminRowsFromTable();
+  const seenIds = new Set();
+  for (const row of adminRows) {
+    const id = String(row.id || "").trim();
+    if (id && seenIds.has(id)) {
+      message.textContent = `מספר משחק כפול: ${id}. יש לתקן אותו לפני השמירה.`;
+      return false;
+    }
+    if (id) seenIds.add(id);
+  }
+  try {
+    localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify({
+      baseCsv: baseGamesCsv,
+      headers: csvHeaders,
+      rows: adminRows,
+      exportedCsv: null
+    }));
+  } catch (error) {
+    message.textContent = "לא ניתן לשמור בדפדפן הזה. בדקו את הגדרות האחסון ונסו שוב.";
+    return false;
+  }
+  syncGamesFromAdminRows();
+  renderGameList();
+  message.textContent = "השינויים נשמרו בדפדפן הזה.";
+  return true;
+}
+
+
+function exportGamesCsv() {
+  if (!saveAdminTable()) return;
+  const csv = serializeAdminCsv();
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "games.csv";
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  try {
+    localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify({
+      baseCsv: baseGamesCsv,
+      headers: csvHeaders,
+      rows: adminRows,
+      exportedCsv: csv
+    }));
+  } catch (error) {
+    $("adminMessage").textContent = "הקובץ הורד, אך השינויים לא נשמרו באחסון הדפדפן.";
+    return;
+  }
+  $("adminMessage").textContent = "קובץ games.csv הורד עם כל השינויים.";
+}
+
+
+function addAdminRow() {
+  adminRows = getAdminRowsFromTable();
+  const ids = adminRows.map(row => Number(row.id)).filter(Number.isFinite);
+  const row = Object.fromEntries(csvHeaders.map(header => [header, ""]));
+  row.id = String(Math.max(0, ...ids) + 1);
+  row.date = new Date().toISOString().slice(0, 10);
+  row.author = playerNickname;
+  row.direction = "straight";
+  row.difficulty = "1";
+  adminRows.push(row);
+  renderAdminTable();
+  $("adminMessage").textContent = "נוספה שורה חדשה. ערכו אותה ולחצו על שמירת שינויים.";
+}
+
+
+function removeAdminRow(rowIndex) {
+  adminRows = getAdminRowsFromTable();
+  adminRows.splice(rowIndex, 1);
+  renderAdminTable();
+  $("adminMessage").textContent = "השורה הוסרה מהטבלה. לחצו על שמירת שינויים כדי לשמור.";
 }
 
 
@@ -1179,7 +1382,7 @@ function finish(won, quit = false) {
 
     resultText.textContent =
       won
-        ? `הצלחת עם ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}.`
+        ? `הצלחתי עם ${guesses} ${guesses === 1 ? "ניחוש" : "ניחושים"}.`
         : isLatestPublishedGame(currentGame)
           ? "התשובה תישמר בסוד עד לפרסום המשחק הבא."
           : "התשובה למשחק הזה היא";
@@ -1573,6 +1776,29 @@ function initialize() {
   const signOutBtn = $("signOutBtn");
   if (signOutBtn) {
     signOutBtn.addEventListener("click", signOut);
+  }
+
+  const adminAddRowBtn = $("adminAddRowBtn");
+  if (adminAddRowBtn) {
+    adminAddRowBtn.addEventListener("click", addAdminRow);
+  }
+  const adminSaveBtn = $("adminSaveBtn");
+  if (adminSaveBtn) {
+    adminSaveBtn.addEventListener("click", saveAdminTable);
+  }
+  const exportGamesBtn = $("exportGamesBtn");
+  if (exportGamesBtn) {
+    exportGamesBtn.addEventListener("click", exportGamesCsv);
+  }
+  const adminGamesTable = $("adminGamesTable");
+  if (adminGamesTable) {
+    adminGamesTable.addEventListener("input", () => {
+      $("adminMessage").textContent = "יש שינויים שלא נשמרו.";
+    });
+    adminGamesTable.addEventListener("click", event => {
+      const removeButton = event.target.closest("[data-remove-row]");
+      if (removeButton) removeAdminRow(Number(removeButton.dataset.removeRow));
+    });
   }
 
   if (startBtn) {
