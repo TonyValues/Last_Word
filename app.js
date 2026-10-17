@@ -214,6 +214,18 @@ function toIsoDate(dateString) {
 
 
 async function loadGames() {
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.rpc("get_games_catalog");
+    if (!error && data && Array.isArray(data.headers) && Array.isArray(data.rows)) {
+      csvHeaders = data.headers;
+      adminRows = data.rows;
+      baseGamesCsv = "";
+      syncGamesFromAdminRows();
+      return;
+    }
+    if (error) console.warn("Unable to load the Supabase games catalog; using games.csv", error);
+  }
+
   const response = await fetch("games.csv?v=4");
   if (!response.ok) throw new Error(`Unable to load games.csv (${response.status})`);
 
@@ -338,7 +350,7 @@ function syncGamesFromAdminRows() {
 }
 
 
-function saveAdminTable() {
+async function saveAdminTable() {
   const message = $("adminMessage");
   adminRows = getAdminRowsFromTable();
   const seenIds = new Set();
@@ -386,25 +398,42 @@ function exportGamesCsv() {
     }));
   } catch (error) {
     $("adminMessage").textContent = "הקובץ הורד, אך השינויים לא נשמרו באחסון הדפדפן.";
-    return;
-  }
-  $("adminMessage").textContent = "קובץ games.csv הורד עם כל השינויים.";
-}
-
-
-function addAdminRow() {
-  adminRows = getAdminRowsFromTable();
-  const ids = adminRows.map(row => Number(row.id)).filter(Number.isFinite);
-  const row = Object.fromEntries(csvHeaders.map(header => [header, ""]));
+    if (!supabaseClient) {
+      message.textContent = "החיבור למאגר המשחקים אינו זמין. לא ניתן לשמור שינויים.";
+      return false;
   row.id = String(Math.max(0, ...ids) + 1);
+
+    const saveButton = $("adminSaveBtn");
+    if (saveButton) saveButton.disabled = true;
+    message.textContent = "שומר למאגר המשחקים...";
+    let error;
+    try {
+      ({ error } = await supabaseClient.rpc("save_games_catalog", {
+        requested_admin_nickname: playerNickname,
+        requested_catalog_data: { headers: csvHeaders, rows: adminRows }
+      }));
+    } catch (requestError) {
+      console.error("Unable to save the Supabase games catalog", requestError);
+      message.textContent = "השמירה נכשלה. בדקו את חיבור המאגר ונסו שוב.";
+      return false;
+    } finally {
+      if (saveButton) saveButton.disabled = false;
+    }
+    if (error) {
+      console.error("Unable to save the Supabase games catalog", error);
+      message.textContent = "השמירה נכשלה. בדקו את חיבור המאגר ונסו שוב.";
+      return false;
+    }
+
+    baseGamesCsv = serializeAdminCsv();
   row.date = new Date().toISOString().slice(0, 10);
   row.author = playerNickname;
-  row.direction = "straight";
+    message.textContent = "השינויים נשמרו במאגר המשחקים וזמינים לכולם.";
   row.difficulty = "1";
   adminRows.push(row);
   renderAdminTable();
-  $("adminMessage").textContent = "נוספה שורה חדשה. ערכו אותה ולחצו על שמירת שינויים.";
-}
+  async function exportGamesCsv() {
+    if (!await saveAdminTable()) return;
 
 
 function removeAdminRow(rowIndex) {
